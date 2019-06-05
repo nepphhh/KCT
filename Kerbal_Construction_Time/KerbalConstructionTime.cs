@@ -402,7 +402,7 @@ namespace KerbalConstructionTime
                     if (removed) //Only do these when the vessel is first removed from the list
                     {
                         //Add the cost of the ship to the funds so it can be removed again by KSP
-                        KCT_Utilities.AddFunds(KCT_GameStates.launchedVessel.cost, TransactionReasons.VesselRollout);
+                        KCT_Utilities.AddFunds(KCT_GameStates.launchedVessel.GetTotalCost(), TransactionReasons.VesselRollout);
                         FlightGlobals.ActiveVessel.vesselName = KCT_GameStates.launchedVessel.shipName;
                     }
                     KCT_Recon_Rollout rollout = KCT_GameStates.ActiveKSC.Recon_Rollout.FirstOrDefault(r => r.associatedID == KCT_GameStates.launchedVessel.id.ToString());
@@ -807,7 +807,7 @@ namespace KerbalConstructionTime
                 foreach (KCT_BuildListVessel blv in errored)
                 {
                     blv.RemoveFromBuildList();
-                    KCT_Utilities.AddFunds(blv.cost, TransactionReasons.VesselRollout);
+                    KCT_Utilities.AddFunds(blv.GetTotalCost(), TransactionReasons.VesselRollout);
                     //remove any associated recon_rollout
                 }
             });

@@ -53,6 +53,11 @@ namespace KerbalConstructionTime
             return PartLoader.getPartInfoByName(partName);
         }
 
+        /// <summary>
+        /// This is actually the cost in BPs which can in turn be used to calculate the ingame time it takes to build the vessel.
+        /// </summary>
+        /// <param name="parts"></param>
+        /// <returns></returns>
         public static double GetBuildTime(List<Part> parts)
         {
             //get list of parts that are in the inventory
@@ -903,10 +908,10 @@ namespace KerbalConstructionTime
 
             ScrapYardWrapper.ProcessVessel(blv.ExtractedPartNodes);
 
-            KCTDebug.Log("Added " + blv.shipName + " to " + type + " build list at KSC "+KCT_GameStates.ActiveKSC.KSCName+". Cost: "+blv.cost);
+            KCTDebug.Log($"Added {blv.shipName} to {type} build list at KSC {KCT_GameStates.ActiveKSC.KSCName}. Cost: {blv.cost}. IntegrationCost: {blv.integrationCost}");
             KCTDebug.Log("Launch site is " + blv.launchSite);
             //KCTDebug.Log("Cost Breakdown (total, parts, fuel): " + blv.totalCost + ", " + blv.dryCost + ", " + blv.fuelCost);
-            var message = new ScreenMessage("[KCT] Added " + blv.shipName + " to " + type + " build list.", 4.0f, ScreenMessageStyle.UPPER_CENTER);
+            var message = new ScreenMessage($"[KCT] Added {blv.shipName} to {type} build list.", 4.0f, ScreenMessageStyle.UPPER_CENTER);
             ScreenMessages.PostScreenMessage(message);
             return blv;
         }
@@ -1257,7 +1262,11 @@ namespace KerbalConstructionTime
             }
 
             KCT_GameStates.EditorBuildTime = GetBuildTime(ship.Parts);
-            KCT_GameStates.EditorRolloutCosts = KCT_MathParsing.ParseRolloutCostFormula(new KCT_BuildListVessel(ship, EditorLogic.fetch.launchSiteName, KCT_GameStates.EditorBuildTime, EditorLogic.FlagURL));
+            var kctVessel = new KCT_BuildListVessel(ship, EditorLogic.fetch.launchSiteName, KCT_GameStates.EditorBuildTime, EditorLogic.FlagURL);
+
+            KCT_GameStates.EditorIntegrationTime = KCT_MathParsing.ParseIntegrationTimeFormula(kctVessel);
+            KCT_GameStates.EditorRolloutCosts = KCT_MathParsing.ParseRolloutCostFormula(kctVessel);
+            KCT_GameStates.EditorIntegrationCosts = KCT_MathParsing.ParseIntegrationCostFormula(kctVessel);
         }
 
         public static bool ApproximatelyEqual(double d1, double d2, double error = 0.01 )

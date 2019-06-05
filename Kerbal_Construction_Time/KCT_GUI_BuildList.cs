@@ -781,7 +781,7 @@ namespace KerbalConstructionTime
                         if (b.buildRate > 0)
                             GUILayout.Label(MagiCore.Utilities.GetColonFormattedTime(b.timeLeft), GUILayout.Width(width2));
                         else
-                            GUILayout.Label("Est: " + MagiCore.Utilities.GetColonFormattedTime((b.buildPoints - b.progress) / KCT_Utilities.GetBuildRate(0, KCT_BuildListVessel.ListType.SPH, null)), GUILayout.Width(width2));
+                            GUILayout.Label("Est: " + MagiCore.Utilities.GetColonFormattedTime((b.buildPoints + b.integrationPoints - b.progress) / KCT_Utilities.GetBuildRate(0, KCT_BuildListVessel.ListType.SPH, null)), GUILayout.Width(width2));
                         //GUILayout.Label(Math.Round(b.buildPoints, 2).ToString(), GUILayout.Width(width1 / 2 + 10));
                         GUILayout.EndHorizontal();
                     }
@@ -1206,7 +1206,7 @@ namespace KerbalConstructionTime
             {
                 double cost = b.GetTotalCost();
                 double rush = cost * rbMultiplier;
-                double remainingBP = b.buildPoints - b.progress;
+                double remainingBP = b.buildPoints + b.integrationPoints - b.progress;
                 if (Funding.Instance.Funds >= rush)
                 {
                     b.AddProgress(remainingBP * 0.1);

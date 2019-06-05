@@ -428,6 +428,12 @@ namespace KerbalConstructionTime
                     GUILayout.Label("Invalid Build Rate");
                 }
 
+                if (KCT_GameStates.EditorIntegrationTime > 0)
+                    GUILayout.Label("Integration Time: " + MagiCore.Utilities.GetFormattedTime(KCT_GameStates.EditorIntegrationTime / bR));
+
+                if (KCT_GameStates.EditorIntegrationCosts > 0)
+                    GUILayout.Label("Integration Cost: " + Math.Round(KCT_GameStates.EditorIntegrationCosts, 1));
+
                 if (KCT_GameStates.EditorRolloutCosts > 0)
                     GUILayout.Label("Launch Cost: " + Math.Round(KCT_GameStates.EditorRolloutCosts, 1));
 
@@ -514,11 +520,11 @@ namespace KerbalConstructionTime
                 {
 
                     finishedShipBP = -1;
-                    KCT_Utilities.AddFunds(ship.cost, TransactionReasons.VesselRollout);
+                    KCT_Utilities.AddFunds(ship.GetTotalCost(), TransactionReasons.VesselRollout);
                     KCT_BuildListVessel newShip = KCT_Utilities.AddVesselToBuildList();
                     if (newShip == null)
                     {
-                        KCT_Utilities.SpendFunds(ship.cost, TransactionReasons.VesselRollout);
+                        KCT_Utilities.SpendFunds(ship.GetTotalCost(), TransactionReasons.VesselRollout);
                         return;
                     }
 
@@ -688,7 +694,7 @@ namespace KerbalConstructionTime
                 ScrapYardWrapper.AddPartsToInventory(b.ExtractedPartNodes, false); //don't count as a recovery
             }
             ScrapYardWrapper.SetProcessedStatus(ScrapYardWrapper.GetPartID(b.ExtractedPartNodes[0]), false);
-            KCT_Utilities.AddFunds(b.cost, TransactionReasons.VesselRollout);
+            KCT_Utilities.AddFunds(b.GetTotalCost(), TransactionReasons.VesselRollout);
         }
 
         public static void DummyVoid() { InputLockManager.RemoveControlLock("KCTPopupLock"); }

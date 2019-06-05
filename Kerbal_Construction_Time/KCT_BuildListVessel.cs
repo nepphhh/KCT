@@ -11,7 +11,7 @@ namespace KerbalConstructionTime
     public class KCT_BuildListVessel : IKCTBuildItem
     {
         private ShipConstruct ship;
-        public double progress, buildPoints;
+        public double progress, buildPoints, integrationPoints;
         public String launchSite, flag, shipName;
         public int launchSiteID = -1;
         public ListType type;
@@ -19,7 +19,8 @@ namespace KerbalConstructionTime
         public ConfigNode shipNode;
         public Guid id;
         public bool cannotEarnScience;
-        public float cost = 0, TotalMass = 0, DistanceFromKSC = 0;
+        public float cost = 0, integrationCost;
+        public float TotalMass = 0, DistanceFromKSC = 0;
         public int rushBuildClicks = 0;
         public int numStages = 0;
         public int numStageParts = 0;
@@ -31,7 +32,7 @@ namespace KerbalConstructionTime
             get
             {
                 if (buildRate > 0)
-                    return (buildPoints-progress)/buildRate;
+                    return (integrationPoints + buildPoints - progress) / buildRate;
                 else
                     return double.PositiveInfinity;
             }
@@ -56,7 +57,7 @@ namespace KerbalConstructionTime
                 return this.shipNode.GetNodes("PART").ToList();
             }
         }
-        public bool isFinished { get { return progress >= buildPoints; } }
+        public bool isFinished { get { return progress >= buildPoints + integrationPoints; } }
 
         private KCT_KSC _ksc = null;
         public KCT_KSC KSC
@@ -140,19 +141,20 @@ namespace KerbalConstructionTime
             {
                 foreach (ProtoCrewMember crew in CrewAssignmentDialog.Instance.GetManifest().GetAllCrew(true) ?? new List<ProtoCrewMember>())
                 {
-                   
-                        DesiredManifest.Add(crew?.name ?? string.Empty);
-                    
+                    DesiredManifest.Add(crew?.name ?? string.Empty);
                 }
             }
+            integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(this);
+            integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(this);
         }
 
-        public KCT_BuildListVessel(String name, String ls, double bP, String flagURL, float spentFunds, int EditorFacility)
+        public KCT_BuildListVessel(String name, String ls, double bP, double integrP, String flagURL, float spentFunds, float integrCost, int EditorFacility)
         {
             //ship = new ShipConstruct();
             launchSite = ls;
             shipName = name;
             buildPoints = bP;
+            integrationPoints = integrP;
             progress = 0;
             flag = flagURL;
             if (EditorFacility == (int)EditorFacilities.VAB)
@@ -163,6 +165,7 @@ namespace KerbalConstructionTime
                 type = ListType.None;
             cannotEarnScience = false;
             cost = spentFunds;
+            integrationCost = integrCost;
         }
 
         //private ProtoVessel recovered;
@@ -213,6 +216,8 @@ namespace KerbalConstructionTime
             DistanceFromKSC = (float)SpaceCenter.Instance.GreatCircleDistance(SpaceCenter.Instance.cb.GetRelSurfaceNVector(vessel.latitude, vessel.longitude));
 
             rushBuildClicks = 0;
+            integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(this);
+            integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(this);
         }
 
         private ConfigNode FromInFlightVessel(Vessel VesselToSave)
@@ -414,7 +419,7 @@ namespace KerbalConstructionTime
 
         public KCT_BuildListVessel NewCopy(bool RecalcTime)
         {
-            KCT_BuildListVessel ret = new KCT_BuildListVessel(this.shipName, this.launchSite, this.buildPoints, this.flag, this.cost, (int)GetEditorFacility());
+            KCT_BuildListVessel ret = new KCT_BuildListVessel(this.shipName, this.launchSite, this.buildPoints, this.integrationPoints, this.flag, this.cost, this.integrationCost, (int)GetEditorFacility());
             ret.shipNode = this.shipNode.CreateCopy();
 
             //refresh all inventory parts to new
@@ -424,17 +429,22 @@ namespace KerbalConstructionTime
             }
 
             ret.id = Guid.NewGuid();
-            if (RecalcTime)
-            {
-                ret.buildPoints = KCT_Utilities.GetBuildTime(ret.ExtractedPartNodes);
-            }
             ret.TotalMass = this.TotalMass;
             ret.emptyMass = this.emptyMass;
             ret.cost = this.cost;
+            ret.integrationCost = this.integrationCost;
             ret.emptyCost = this.emptyCost;
             ret.numStageParts = this.numStageParts;
             ret.numStages = this.numStages;
             ret.stagePartCost = this.stagePartCost;
+
+            if (RecalcTime)
+            {
+                ret.buildPoints = KCT_Utilities.GetBuildTime(ret.ExtractedPartNodes);
+                ret.integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(ret);
+                ret.integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(ret);
+            }
+
             return ret;
         }
 
@@ -619,11 +629,14 @@ namespace KerbalConstructionTime
 
         public double GetTotalCost()
         {
-            if (cost != 0 && emptyCost != 0) return cost;
-            cost = KCT_Utilities.GetTotalVesselCost(shipNode);
-            emptyCost = KCT_Utilities.GetTotalVesselCost(shipNode, false);
-            //return KCT_Utilities.GetTotalVesselCost(shipNode);
-            return cost;
+            if (cost == 0 || emptyCost == 0)
+            {
+                cost = KCT_Utilities.GetTotalVesselCost(shipNode);
+                emptyCost = KCT_Utilities.GetTotalVesselCost(shipNode, false);
+                integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(this);
+            }
+
+            return cost + integrationCost;
         }
 
         public bool RemoveFromBuildList()
@@ -818,7 +831,7 @@ namespace KerbalConstructionTime
 
         public double ProgressPercent()
         {
-            return 100 * (progress / buildPoints);
+            return 100 * (progress / (buildPoints + integrationPoints));
         }
 
         string IKCTBuildItem.GetItemName()
@@ -843,7 +856,7 @@ namespace KerbalConstructionTime
 
         bool IKCTBuildItem.IsComplete()
         {
-            return (progress >= buildPoints);
+            return (progress >= buildPoints + integrationPoints);
         }
 
     }

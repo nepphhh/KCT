@@ -555,7 +555,7 @@ namespace KerbalConstructionTime
                     //rebuy the ship if ScrapYard isn't overriding funds
                     if (!ScrapYardWrapper.OverrideFunds)
                     {
-                        KCT_Utilities.SpendFunds(KCT_GameStates.recoveredVessel.cost, TransactionReasons.VesselRollout); //pay for the ship again
+                        KCT_Utilities.SpendFunds(KCT_GameStates.recoveredVessel.GetTotalCost(), TransactionReasons.VesselRollout); //pay for the ship again
                     }
 
                     //pull all of the parts out of the inventory
@@ -584,6 +584,7 @@ namespace KerbalConstructionTime
 
                         //reset the BP
                         KCT_GameStates.recoveredVessel.buildPoints = KCT_Utilities.GetBuildTime(KCT_GameStates.recoveredVessel.ExtractedPartNodes);
+                        KCT_GameStates.recoveredVessel.integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(KCT_GameStates.recoveredVessel);
                     }
                     if (KCT_GameStates.recoveredVessel.type == KCT_BuildListVessel.ListType.VAB)
                     {

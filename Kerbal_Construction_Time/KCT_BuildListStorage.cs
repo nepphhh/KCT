@@ -113,7 +113,7 @@ namespace KerbalConstructionTime
             [Persistent]
             string shipName, shipID;
             [Persistent]
-            double progress, buildTime;
+            double progress, buildTime, integrationTime;
             [Persistent]
             String launchSite, flag;
             //[Persistent]
@@ -121,7 +121,9 @@ namespace KerbalConstructionTime
             [Persistent]
             bool cannotEarnScience;
             [Persistent]
-            float cost = 0, mass = 0, kscDistance = 0;
+            float cost = 0, integrationCost;
+            [Persistent]
+            float mass = 0, kscDistance = 0;
             [Persistent]
             int numStageParts = 0, numStages = 0;
             [Persistent]
@@ -135,7 +137,7 @@ namespace KerbalConstructionTime
 
             public KCT_BuildListVessel ToBuildListVessel()
             {
-                KCT_BuildListVessel ret = new KCT_BuildListVessel(shipName, launchSite, buildTime, flag, cost, EditorFacility);
+                KCT_BuildListVessel ret = new KCT_BuildListVessel(shipName, launchSite, buildTime, integrationTime, flag, cost, integrationCost, EditorFacility);
                 ret.progress = progress;
                 ret.id = new Guid(shipID);
                 ret.cannotEarnScience = cannotEarnScience;
@@ -154,6 +156,7 @@ namespace KerbalConstructionTime
             {
                 this.progress = blv.progress;
                 this.buildTime = blv.buildPoints;
+                this.integrationTime = blv.integrationPoints;
                 this.launchSite = blv.launchSite;
                 this.flag = blv.flag;
                 //this.shipURL = blv.shipURL;
@@ -161,6 +164,7 @@ namespace KerbalConstructionTime
                 this.shipID = blv.id.ToString();
                 this.cannotEarnScience = blv.cannotEarnScience;
                 this.cost = blv.cost;
+                this.integrationCost = blv.integrationCost;
                 this.rushBuildClicks = blv.rushBuildClicks;
                 this.mass = blv.TotalMass;
                 this.numStageParts = blv.numStageParts;
