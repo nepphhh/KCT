@@ -128,7 +128,7 @@ namespace KerbalConstructionTime
         private static Dictionary<string, string> GetIntegrationRolloutVariables(KCT_BuildListVessel vessel)
         {
             double loadedMass, emptyMass, loadedCost, emptyCost;
-            loadedCost = vessel.GetTotalCost();
+            loadedCost = vessel.cost;
             emptyCost = vessel.emptyCost;
             loadedMass = vessel.GetTotalMass();
             emptyMass = vessel.emptyMass;
@@ -181,7 +181,7 @@ namespace KerbalConstructionTime
             Dictionary<string, string> variables = new Dictionary<string, string>();
 
             double loadedMass, emptyMass, loadedCost, emptyCost;
-            loadedCost = vessel.GetTotalCost();
+            loadedCost = vessel.cost;
             emptyCost = vessel.emptyCost;
             loadedMass = vessel.GetTotalMass();
             emptyMass = vessel.emptyMass;
