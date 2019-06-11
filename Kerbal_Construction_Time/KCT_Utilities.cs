@@ -1267,6 +1267,7 @@ namespace KerbalConstructionTime
             KCT_GameStates.EditorIntegrationTime = KCT_MathParsing.ParseIntegrationTimeFormula(kctVessel);
             KCT_GameStates.EditorRolloutCosts = KCT_MathParsing.ParseRolloutCostFormula(kctVessel);
             KCT_GameStates.EditorIntegrationCosts = KCT_MathParsing.ParseIntegrationCostFormula(kctVessel);
+            KCT_GameStates.EditorRolloutTime = KCT_MathParsing.ParseReconditioningFormula(kctVessel, false);
         }
 
         public static bool ApproximatelyEqual(double d1, double d2, double error = 0.01 )

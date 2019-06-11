@@ -431,11 +431,17 @@ namespace KerbalConstructionTime
                 if (KCT_GameStates.EditorIntegrationTime > 0)
                     GUILayout.Label("Integration Time: " + MagiCore.Utilities.GetFormattedTime(KCT_GameStates.EditorIntegrationTime / bR));
 
+                if (KCT_GameStates.EditorRolloutTime > 0)
+                {
+                    bR = KCT_Utilities.GetVABBuildRateSum(KCT_GameStates.ActiveKSC);
+                    GUILayout.Label("Rollout Time: " + MagiCore.Utilities.GetFormattedTime(KCT_GameStates.EditorRolloutTime / bR));
+                }
+
                 if (KCT_GameStates.EditorIntegrationCosts > 0)
                     GUILayout.Label("Integration Cost: " + Math.Round(KCT_GameStates.EditorIntegrationCosts, 1));
 
                 if (KCT_GameStates.EditorRolloutCosts > 0)
-                    GUILayout.Label("Launch Cost: " + Math.Round(KCT_GameStates.EditorRolloutCosts, 1));
+                    GUILayout.Label("Rollout Cost: " + Math.Round(KCT_GameStates.EditorRolloutCosts, 1));
 
                 //bool useHolder = useInventory;
                 //useInventory = GUILayout.Toggle(useInventory, " Use parts from inventory?");
