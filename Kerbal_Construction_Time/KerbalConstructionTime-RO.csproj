@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\GameData\KerbalConstructionTime\Plugins\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;KSP1_4;RO</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -27,7 +27,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\GameData\KerbalConstructionTime\plugins\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;KSP1_4;RO</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -102,7 +102,6 @@
     <Compile Include="ScrapYardWrapper.cs" />
     <Compile Include="StageRecoveryWrapper.cs" />
     <Compile Include="ToolbarWrapper.cs" />
-    <Compile Include="Properties\VersionInfo.cs" />
     <Compile Include="TypeExtensions.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalConstructionTime", "Kerbal_Construction_Time\KerbalConstructionTime.csproj", "{93908B2A-0859-4DAB-8873-D32A4C633308}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalConstructionTime-RO", "Kerbal_Construction_Time\KerbalConstructionTime-RO.csproj", "{93908B2A-0859-4DAB-8873-D32A4C633308}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{612C9FFF-5490-4D3D-AE97-E9622441AA8D}"
 	ProjectSection(SolutionItems) = preProject
