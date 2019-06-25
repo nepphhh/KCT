@@ -90,10 +90,20 @@ namespace KerbalConstructionTime
                 int used = ScrapYardWrapper.GetUseCount(p);
                 //C=cost, c=dry cost, M=wet mass, m=dry mass, U=part tracker, O=overall multiplier, I=inventory effect (0 if not in inv), B=build effect
 
-                effectiveCost = KCT_MathParsing.GetStandardFormulaValue("EffectivePart", new Dictionary<string, string>() { {"C", cost.ToString()}, {"c", dryCost.ToString()}, {"M",wetmass.ToString()},
-                    { "m", drymass.ToString()}, {"U", builds.ToString()}, {"u", used.ToString() }, {"O", KCT_PresetManager.Instance.ActivePreset.timeSettings.OverallMultiplier.ToString()}, {"I", InvEff.ToString()},
-                    { "B", KCT_PresetManager.Instance.ActivePreset.timeSettings.BuildEffect.ToString()}, 
-                    {"PV", PartMultiplier.ToString()}, {"RV", ResourceMultiplier.ToString()}, {"MV", ModuleMultiplier.ToString()}});
+                effectiveCost = KCT_MathParsing.GetStandardFormulaValue("EffectivePart", 
+                    new Dictionary<string, string>() {
+                        {"C", cost.ToString()},
+                        {"c", dryCost.ToString()},
+                        {"M", wetmass.ToString()},
+                        {"m", drymass.ToString()},
+                        {"U", builds.ToString()},
+                        {"u", used.ToString() },
+                        {"O", KCT_PresetManager.Instance.ActivePreset.timeSettings.OverallMultiplier.ToString()},
+                        {"I", InvEff.ToString()},
+                        {"B", KCT_PresetManager.Instance.ActivePreset.timeSettings.BuildEffect.ToString()}, 
+                        {"PV", PartMultiplier.ToString()},
+                        {"RV", ResourceMultiplier.ToString()},
+                        {"MV", ModuleMultiplier.ToString()}});
 
                 if (InvEff != 0)
                 {
@@ -163,14 +173,15 @@ namespace KerbalConstructionTime
                     new Dictionary<string, string>() { 
                         {"C", cost.ToString()}, 
                         {"c", dryCost.ToString()}, 
-                        {"M",wetMass.ToString()},
+                        {"M", wetMass.ToString()},
                         {"m", dryMass.ToString()}, 
                         {"U", builds.ToString()}, 
                         {"u", used.ToString()}, 
                         {"O", KCT_PresetManager.Instance.ActivePreset.timeSettings.OverallMultiplier.ToString()}, 
-                        {"I", InvEff.ToString()}, {"B", KCT_PresetManager.Instance.ActivePreset.timeSettings.BuildEffect.ToString()}, 
+                        {"I", InvEff.ToString()},
+                        {"B", KCT_PresetManager.Instance.ActivePreset.timeSettings.BuildEffect.ToString()}, 
                         {"PV", PartMultiplier.ToString()}, 
-                        {"RV", PartMultiplier.ToString()}, 
+                        {"RV", ResourceMultiplier.ToString()}, 
                         {"MV", ModuleMultiplier.ToString()}});
 
 

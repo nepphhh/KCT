@@ -481,18 +481,23 @@ namespace KerbalConstructionTime
 
                 KCT_BuildListVessel ship = KCT_GameStates.editedVessel;
                 if (finishedShipBP < 0 && ship.isFinished)
+                {
+                    // If ship is finished, then both build and integration times can be refreshed with newly calculated values
                     finishedShipBP = KCT_Utilities.GetBuildTime(ship.ExtractedPartNodes);
-                double origBP = ship.isFinished ? finishedShipBP : ship.buildPoints; //If the ship is finished, recalculate times. Else, use predefined times.
-                double buildTime = KCT_GameStates.EditorBuildTime;
+                    ship.buildPoints = finishedShipBP;
+                    ship.integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(ship);
+                }
+
+                double origBP = ship.isFinished ? finishedShipBP : ship.buildPoints;
+                origBP += ship.integrationPoints;
+                double buildTime = KCT_GameStates.EditorBuildTime + KCT_GameStates.EditorIntegrationTime;
                 double difference = Math.Abs(buildTime - origBP);
                 double progress;
                 if (ship.isFinished) progress = origBP;
                 else progress = ship.progress;
                 double newProgress = Math.Max(0, progress - (1.1 * difference));
-                //GUILayout.Label("Original: " + Math.Max(0, Math.Round(progress, 2)) + "/" + Math.Round(origBP, 2) + " BP (" + Math.Max(0, Math.Round(100 * (progress / origBP), 2)) + "%)");
-                GUILayout.Label("Original: " + Math.Max(0, Math.Round(100 * (progress / origBP), 2)) + "%");
-                //GUILayout.Label("Edited: " + Math.Round(newProgress, 2) + "/" + Math.Round(buildTime, 2) + " BP (" + Math.Round(100 * newProgress / buildTime, 2) + "%)");
-                GUILayout.Label("Edited: " + Math.Round(100 * newProgress / buildTime, 2) + "%");
+                GUILayout.Label($"Original: {Math.Max(0, Math.Round(100 * (progress / origBP), 2))}%");
+                GUILayout.Label($"Edited: {Math.Round(100 * newProgress / buildTime, 2)}%");
 
                 KCT_BuildListVessel.ListType type = EditorLogic.fetch.launchSiteName == "LaunchPad" ? KCT_BuildListVessel.ListType.VAB : KCT_BuildListVessel.ListType.SPH;
                 GUILayout.BeginHorizontal();
