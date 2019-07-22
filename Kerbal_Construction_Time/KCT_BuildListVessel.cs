@@ -211,13 +211,14 @@ namespace KerbalConstructionTime
 
             buildPoints = KCT_Utilities.GetBuildTime(shipNode.GetNodes("PART").ToList());
             flag = HighLogic.CurrentGame.flagURL;
-            progress = buildPoints;
 
             DistanceFromKSC = (float)SpaceCenter.Instance.GreatCircleDistance(SpaceCenter.Instance.cb.GetRelSurfaceNVector(vessel.latitude, vessel.longitude));
 
             rushBuildClicks = 0;
             integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(this);
             integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(this);
+
+            progress = buildPoints + integrationPoints;
         }
 
         private ConfigNode FromInFlightVessel(Vessel VesselToSave)
