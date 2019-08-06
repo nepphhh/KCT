@@ -113,7 +113,7 @@ namespace KerbalConstructionTime
             [Persistent]
             string shipName, shipID;
             [Persistent]
-            double progress, buildTime, integrationTime;
+            double progress, effectiveCost, buildTime, integrationTime;
             [Persistent]
             String launchSite, flag;
             //[Persistent]
@@ -137,7 +137,7 @@ namespace KerbalConstructionTime
 
             public KCT_BuildListVessel ToBuildListVessel()
             {
-                KCT_BuildListVessel ret = new KCT_BuildListVessel(shipName, launchSite, buildTime, integrationTime, flag, cost, integrationCost, EditorFacility);
+                KCT_BuildListVessel ret = new KCT_BuildListVessel(shipName, launchSite, effectiveCost, buildTime, integrationTime, flag, cost, integrationCost, EditorFacility);
                 ret.progress = progress;
                 ret.id = new Guid(shipID);
                 ret.cannotEarnScience = cannotEarnScience;
@@ -155,6 +155,7 @@ namespace KerbalConstructionTime
             public BuildListItem FromBuildListVessel(KCT_BuildListVessel blv)
             {
                 this.progress = blv.progress;
+                this.effectiveCost = blv.effectiveCost;
                 this.buildTime = blv.buildPoints;
                 this.integrationTime = blv.integrationPoints;
                 this.launchSite = blv.launchSite;

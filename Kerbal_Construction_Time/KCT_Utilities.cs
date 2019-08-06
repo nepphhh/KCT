@@ -81,7 +81,7 @@ namespace KerbalConstructionTime
             return finalBP;
         }
 
-        private static double GetEffectiveCost(List<Part> parts)
+        public static double GetEffectiveCost(List<Part> parts)
         {
             //get list of parts that are in the inventory
             IList<Part> inventorySample = ScrapYardWrapper.GetPartsInInventory(parts, ScrapYardWrapper.ComparisonStrength.STRICT) ?? new List<Part>();
@@ -144,7 +144,7 @@ namespace KerbalConstructionTime
             return totalEffectiveCost * globalMultiplier;
         }
 
-        private static double GetEffectiveCost(List<ConfigNode> parts)
+        public static double GetEffectiveCost(List<ConfigNode> parts)
         {
             //get list of parts that are in the inventory
             IList<ConfigNode> inventorySample = ScrapYardWrapper.GetPartsInInventory(parts, ScrapYardWrapper.ComparisonStrength.STRICT) ?? new List<ConfigNode>();
@@ -896,7 +896,9 @@ namespace KerbalConstructionTime
             {
                 launchSite = EditorLogic.fetch.launchSiteName;
             }
-            KCT_BuildListVessel blv = new KCT_BuildListVessel(EditorLogic.fetch.ship, launchSite, GetBuildTime(EditorLogic.fetch.ship.Parts), EditorLogic.FlagURL);
+            double effCost = GetEffectiveCost(EditorLogic.fetch.ship.Parts);
+            double bp = GetBuildTime(effCost);
+            KCT_BuildListVessel blv = new KCT_BuildListVessel(EditorLogic.fetch.ship, launchSite, effCost, bp, EditorLogic.FlagURL);
             blv.shipName = EditorLogic.fetch.shipNameField.text;
             return AddVesselToBuildList(blv);
         }
@@ -1298,8 +1300,9 @@ namespace KerbalConstructionTime
                 return;
             }
 
-            KCT_GameStates.EditorBuildTime = GetBuildTime(ship.Parts);
-            var kctVessel = new KCT_BuildListVessel(ship, EditorLogic.fetch.launchSiteName, KCT_GameStates.EditorBuildTime, EditorLogic.FlagURL);
+            double effCost = GetEffectiveCost(ship.Parts);
+            KCT_GameStates.EditorBuildTime = GetBuildTime(effCost);
+            var kctVessel = new KCT_BuildListVessel(ship, EditorLogic.fetch.launchSiteName, effCost, KCT_GameStates.EditorBuildTime, EditorLogic.FlagURL);
 
             KCT_GameStates.EditorIntegrationTime = KCT_MathParsing.ParseIntegrationTimeFormula(kctVessel);
             KCT_GameStates.EditorRolloutCosts = KCT_MathParsing.ParseRolloutCostFormula(kctVessel);

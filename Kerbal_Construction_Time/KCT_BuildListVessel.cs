@@ -11,7 +11,7 @@ namespace KerbalConstructionTime
     public class KCT_BuildListVessel : IKCTBuildItem
     {
         private ShipConstruct ship;
-        public double progress, buildPoints, integrationPoints;
+        public double progress, effectiveCost, buildPoints, integrationPoints;
         public String launchSite, flag, shipName;
         public int launchSiteID = -1;
         public ListType type;
@@ -98,7 +98,7 @@ namespace KerbalConstructionTime
             get { return _desiredManifest; }
         }
 
-        public KCT_BuildListVessel(ShipConstruct s, String ls, double bP, String flagURL)
+        public KCT_BuildListVessel(ShipConstruct s, String ls, double effCost, double bP, String flagURL)
         {
             ship = s;
             shipNode = s.SaveShip();
@@ -123,6 +123,7 @@ namespace KerbalConstructionTime
             numStages = stages.Count;
 
             launchSite = ls;
+            effectiveCost = effCost;
             buildPoints = bP;
             progress = 0;
             flag = flagURL;
@@ -144,15 +145,24 @@ namespace KerbalConstructionTime
                     DesiredManifest.Add(crew?.name ?? string.Empty);
                 }
             }
+
+            if (effectiveCost == default(double))
+            {
+                // Can only happen in older saves that didn't have Effective cost persisted as a separate field
+                // This code should be safe to remove after a while.
+                effectiveCost = KCT_Utilities.GetEffectiveCost(shipNode.GetNodes("PART").ToList());
+            }
+
             integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(this);
             integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(this);
         }
 
-        public KCT_BuildListVessel(String name, String ls, double bP, double integrP, String flagURL, float spentFunds, float integrCost, int EditorFacility)
+        public KCT_BuildListVessel(String name, String ls, double effCost, double bP, double integrP, String flagURL, float spentFunds, float integrCost, int EditorFacility)
         {
             //ship = new ShipConstruct();
             launchSite = ls;
             shipName = name;
+            effectiveCost = effCost;
             buildPoints = bP;
             integrationPoints = integrP;
             progress = 0;
@@ -209,7 +219,8 @@ namespace KerbalConstructionTime
             numStages = stages.Count;
             // FIXME ignore stageable part count and cost - it'll be fixed when we put this back in the editor.
 
-            buildPoints = KCT_Utilities.GetBuildTime(shipNode.GetNodes("PART").ToList());
+            effectiveCost = KCT_Utilities.GetEffectiveCost(shipNode.GetNodes("PART").ToList());
+            buildPoints = KCT_Utilities.GetBuildTime(effectiveCost);
             flag = HighLogic.CurrentGame.flagURL;
 
             DistanceFromKSC = (float)SpaceCenter.Instance.GreatCircleDistance(SpaceCenter.Instance.cb.GetRelSurfaceNVector(vessel.latitude, vessel.longitude));
@@ -420,7 +431,7 @@ namespace KerbalConstructionTime
 
         public KCT_BuildListVessel NewCopy(bool RecalcTime)
         {
-            KCT_BuildListVessel ret = new KCT_BuildListVessel(this.shipName, this.launchSite, this.buildPoints, this.integrationPoints, this.flag, this.cost, this.integrationCost, (int)GetEditorFacility());
+            KCT_BuildListVessel ret = new KCT_BuildListVessel(this.shipName, this.launchSite, this.effectiveCost, this.buildPoints, this.integrationPoints, this.flag, this.cost, this.integrationCost, (int)GetEditorFacility());
             ret.shipNode = this.shipNode.CreateCopy();
 
             //refresh all inventory parts to new
@@ -441,7 +452,8 @@ namespace KerbalConstructionTime
 
             if (RecalcTime)
             {
-                ret.buildPoints = KCT_Utilities.GetBuildTime(ret.ExtractedPartNodes);
+                ret.effectiveCost = KCT_Utilities.GetEffectiveCost(ret.ExtractedPartNodes);
+                ret.buildPoints = KCT_Utilities.GetBuildTime(ret.effectiveCost);
                 ret.integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(ret);
                 ret.integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(ret);
             }
