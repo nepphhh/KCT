@@ -160,6 +160,7 @@ namespace KerbalConstructionTime
             variables.Add("C", loadedCost.ToString());
             variables.Add("c", emptyCost.ToString());
             variables.Add("VAB", isVABVessel.ToString());
+            variables.Add("E", vessel.effectiveCost.ToString());
             variables.Add("BP", BP.ToString());
             variables.Add("L", LaunchSiteLvl.ToString());
             variables.Add("LM", LaunchSiteMax.ToString());
