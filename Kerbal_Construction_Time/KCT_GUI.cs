@@ -1827,7 +1827,7 @@ namespace KerbalConstructionTime
 
             double curPadCost = padCosts[selectedPadIdx];
             double curPadBuildTime = KCT_UpgradingBuilding.CalculateBuildTime(curPadCost);
-            string sBuildTime = KSPUtil.PrintDateDelta(curPadBuildTime, true);
+            string sBuildTime = KCT_Utilities.PrintDateDelta(curPadBuildTime, false, false); // Hiding minutes and seconds by default
 
             GUILayout.Label($"It will cost {Math.Round(curPadCost, 2):N} funds to build the new launchpad. " +
                             $"Estimated construction time is {sBuildTime}. Would you like to build it?");

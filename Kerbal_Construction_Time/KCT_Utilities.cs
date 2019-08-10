@@ -1747,6 +1747,78 @@ namespace KerbalConstructionTime
                     string.IsNullOrEmpty(reqTech) ||
                     ResearchAndDevelopment.GetTechnologyState(reqTech) == RDTech.State.Available);
         }
+        private static string labelNumber(int num, string label) 
+        {
+            string formatted = "";
+            if (num > 0) {
+                formatted += Convert.ToString(num) + " " + label;
+                if (num > 1) 
+                {
+                    formatted += "s";
+                }
+            }
+            return formatted;
+        }
+        public static string PrintDateDelta(double inputSeconds, bool showSeconds=false, bool showMinutes=false, bool showHours=true)
+        {
+            
+            // Remove fractional seconds
+            int inputSecondsRounded = Convert.ToInt32(inputSeconds);
+            
+            // Take out years before building a TimeSpan
+            int subYearSeconds = inputSecondsRounded % KSPUtil.dateTimeFormatter.Year;
+            int yearSeconds = inputSecondsRounded - subYearSeconds;
+            
+            // Calculate years
+            int years = yearSeconds / KSPUtil.dateTimeFormatter.Year;
+
+            TimeSpan time = new TimeSpan(0, 0, subYearSeconds);
+
+            // Start the output list
+            string[] formattedTimeComponents = new string[5];
+            formattedTimeComponents[0] = labelNumber(years, "year");
+            formattedTimeComponents[1] = labelNumber(time.Days, "day");
+            formattedTimeComponents[2] = showHours ? labelNumber(time.Hours, "hour") : "";
+            formattedTimeComponents[3] = showMinutes ? labelNumber(time.Minutes, "minute") : "";
+            formattedTimeComponents[4] = showSeconds ? labelNumber(time.Seconds, "second") : "";
+            
+            // Only consider the non-empty ones
+            List<string> nonEmptyFormattedTimeComponents = new List<string>();
+            foreach (string s in formattedTimeComponents) {
+                if (!String.IsNullOrEmpty(s)) {
+                    nonEmptyFormattedTimeComponents.Add(s);
+                }
+            }
+            
+            // Make our output string
+            string formattedTime = "";
+            
+            // Put commas and ands in as required
+            switch (nonEmptyFormattedTimeComponents.Count) {
+            case 0: 
+                if (showSeconds && showMinutes && showHours) 
+                {
+                    formattedTime = "no time at all";
+                } else {
+                    formattedTime = "a very short time";
+                }
+                break;
+            case 1: 
+                formattedTime = nonEmptyFormattedTimeComponents[0];
+                break;
+            case 2: 
+                formattedTime = nonEmptyFormattedTimeComponents[0] + " and " + nonEmptyFormattedTimeComponents[1];
+                break;
+            default: 
+                for (int i=0; i<nonEmptyFormattedTimeComponents.Count-1; i++) {
+                    formattedTime += nonEmptyFormattedTimeComponents[i] + ", ";
+                }
+                formattedTime += "and " + nonEmptyFormattedTimeComponents[nonEmptyFormattedTimeComponents.Count-1];
+                break;
+            }
+            
+            return formattedTime;
+        }
     }
 }
 /*
