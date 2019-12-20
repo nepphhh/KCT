@@ -906,10 +906,12 @@ namespace KerbalConstructionTime
             {
                 launchSite = EditorLogic.fetch.launchSiteName;
             }
+
             double effCost = GetEffectiveCost(EditorLogic.fetch.ship.Parts);
             double bp = GetBuildTime(effCost);
             KCT_BuildListVessel blv = new KCT_BuildListVessel(EditorLogic.fetch.ship, launchSite, effCost, bp, EditorLogic.FlagURL);
             blv.shipName = EditorLogic.fetch.shipNameField.text;
+     
             return AddVesselToBuildList(blv);
         }
 
@@ -943,14 +945,17 @@ namespace KerbalConstructionTime
                     SpendFunds(totalCost, TransactionReasons.VesselRollout);
                 }
             }
+
             string type = "";
             if (blv.type == KCT_BuildListVessel.ListType.VAB)
             {
+                blv.launchSite = "LaunchPad";
                 KCT_GameStates.ActiveKSC.VABList.Add(blv);
                 type = "VAB";
             }
             else if (blv.type == KCT_BuildListVessel.ListType.SPH)
             {
+                blv.launchSite = "Runway";
                 KCT_GameStates.ActiveKSC.SPHList.Add(blv);
                 type = "SPH";
             }
@@ -1028,13 +1033,18 @@ namespace KerbalConstructionTime
                     }
                 }
             }
-            foreach (IKCTBuildItem blv in KCT_GameStates.TechList)
+
+            foreach (KCT_TechItem tech in KCT_GameStates.TechList)
             {
-                double time = blv.GetTimeLeft();
-                if (time < shortestTime)
+                // Ignore items that are blocked
+                if (tech.GetBlockingTech(KCT_GameStates.TechList) == null)
                 {
-                    thing = blv;
-                    shortestTime = time;
+                    double time = ((IKCTBuildItem)tech).GetTimeLeft();
+                    if (time < shortestTime)
+                    {
+                        thing = tech;
+                        shortestTime = time;
+                    }
                 }
             }
             return thing;

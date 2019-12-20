@@ -31,6 +31,7 @@ namespace KerbalConstructionTime
     public class KerbalConstructionTimeData : ScenarioModule
     {
         public static Dictionary<string, string> techNameToTitle = new Dictionary<string, string>();
+        public static Dictionary<string, List<string>> techNameToParents = new Dictionary<string, List<string>>();
 
         protected void LoadTree()
         {
@@ -48,8 +49,22 @@ namespace KerbalConstructionTime
                     ConfigNode[] ns = treeNode.GetNodes("RDNode");
                     foreach (ConfigNode n in ns)
                     {
-                        if (n.HasValue("id") && n.HasValue("title"))
-                            techNameToTitle[n.GetValue("id")] = n.GetValue("title");
+                        if (n.HasValue("id"))
+                        {
+                            string techID = n.GetValue("id");
+
+                            if (n.HasValue("title"))
+                                techNameToTitle[techID] = n.GetValue("title");
+
+                            ConfigNode[] parents = n.GetNodes("Parent");
+                            List<string> pList = new List<string>();
+                            foreach (ConfigNode p in parents)
+                            {
+                                if (p.HasValue("parentID"))
+                                    pList.Add(p.GetValue("parentID"));
+                            }
+                            techNameToParents[techID] = pList;
+                        }
                     }
                 }
             }

@@ -15,7 +15,7 @@ namespace KerbalConstructionTime
             base.Start();
             if (KCT_GUI.PrimarilyDisabled)
                 return;
-            Debug.Log("KCT_Flight, Start");
+            KCTDebug.Log("KCT_Flight, Start");
             var altimeter = UnityEngine.Object.FindObjectOfType<AltimeterSliderButtons>();
             if (altimeter != null)
             {

@@ -256,7 +256,7 @@ namespace KerbalConstructionTime
         {
             if (HighLogic.LoadedScene == GameScenes.SPACECENTER)
             {
-                Debug.Log("onRightClick, PrimarilyDisabled: " + PrimarilyDisabled + ", showFirstRun: " + showFirstRun);
+                //Debug.Log("onRightClick, PrimarilyDisabled: " + PrimarilyDisabled + ", showFirstRun: " + showFirstRun);
                 if (KCT_PresetManager.PresetLoaded() && !showFirstRun)
                 {
                     if (!showSettings)

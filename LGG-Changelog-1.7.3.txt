@@ -1,5 +1,9 @@
 ChangeLog
 
+1.4.6.17
+	Fixed issue where switching editor building while editing a new vessel would end up having the
+	new vessel rolled out to the wrong launchsite 
+
 1.4.6.16
 	Fixed nullref in the editor when not editing a recovered craft
 

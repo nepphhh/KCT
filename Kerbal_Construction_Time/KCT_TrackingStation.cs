@@ -18,7 +18,7 @@ namespace KerbalConstructionTime
             if (KCT_GUI.PrimarilyDisabled)
                 return;
 
-            Debug.Log("KCT_Flight, Start");
+            KCTDebug.Log("KCT_Flight, Start");
             SpaceTracking trackingStation = UnityEngine.Object.FindObjectOfType<SpaceTracking>();
             if (trackingStation != null)
             {

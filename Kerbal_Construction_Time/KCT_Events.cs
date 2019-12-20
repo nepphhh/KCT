@@ -19,7 +19,7 @@ namespace KerbalConstructionTime
 
         public KCT_Events()
         {
-            Debug.Log("KCT_Events constructor");
+            KCTDebug.Log("KCT_Events constructor");
             subscribedToEvents = false;
             createdEvents = false;
         }
