@@ -141,8 +141,6 @@ namespace KerbalConstructionTime
             orbit.UpdateFromStateVectors(teleportPosition, teleportVelocity, body, Planetarium.GetUniversalTime());
             vessel.SetOrbit(orbit);
             vessel.SetRotation(rotation);
-
-            vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false); //hopefully this disables SAS as it causes unknown results!
         }
     }
 }
