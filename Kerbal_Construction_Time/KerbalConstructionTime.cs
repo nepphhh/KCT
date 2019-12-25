@@ -318,68 +318,66 @@ namespace KerbalConstructionTime
                 KCT_GUI.showFirstRun = shouldStart;
             }
 
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ActiveVessel.situation == Vessel.Situations.PRELAUNCH)
+            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ActiveVessel.situation == Vessel.Situations.PRELAUNCH &&
+                FlightGlobals.ActiveVessel.GetCrewCount() == 0 && KCT_GameStates.launchedCrew.Count > 0)
             {
-                if (FlightGlobals.ActiveVessel.GetCrewCount() == 0 && KCT_GameStates.launchedCrew.Count > 0)
-                {
-                    KerbalRoster roster = HighLogic.CurrentGame.CrewRoster;
+                KerbalRoster roster = HighLogic.CurrentGame.CrewRoster;
 
-                    for (int i = 0; i < FlightGlobals.ActiveVessel.parts.Count; i++)
+                for (int i = 0; i < FlightGlobals.ActiveVessel.parts.Count; i++)
+                {
+                    Part p = FlightGlobals.ActiveVessel.parts[i];
+                    //KCTDebug.Log("craft: " + p.craftID);
+                    KCTDebug.LogError("Part being tested: " + p.partInfo.title);
                     {
-                        Part p = FlightGlobals.ActiveVessel.parts[i];
-                        //KCTDebug.Log("craft: " + p.craftID);
-                        KCTDebug.LogError("Part being tested: " + p.partInfo.title);
+                        CrewedPart cP = KCT_GameStates.launchedCrew.Find(part => part.partID == p.craftID);
+                        if (cP == null) continue;
+                        List<ProtoCrewMember> crewList = cP.crewList;
+                        KCTDebug.LogError("cP.crewList.Count: " + cP.crewList.Count);
+                        foreach (ProtoCrewMember crewMember in crewList)
                         {
-                            CrewedPart cP = KCT_GameStates.launchedCrew.Find(part => part.partID == p.craftID);
-                            if (cP == null) continue;
-                            List<ProtoCrewMember> crewList = cP.crewList;
-                            KCTDebug.LogError("cP.crewList.Count: " + cP.crewList.Count);
-                            foreach (ProtoCrewMember crewMember in crewList)
+                            if (crewMember != null)
                             {
-                                if (crewMember != null)
+                                ProtoCrewMember finalCrewMember = crewMember;
+                                if (crewMember.type == ProtoCrewMember.KerbalType.Crew)
                                 {
-                                    ProtoCrewMember finalCrewMember = crewMember;
-                                    if (crewMember.type == ProtoCrewMember.KerbalType.Crew)
+                                    finalCrewMember = roster.Crew.FirstOrDefault(c => c.name == crewMember.name);
+                                }
+                                else if (crewMember.type == ProtoCrewMember.KerbalType.Tourist)
+                                {
+                                    finalCrewMember = roster.Tourist.FirstOrDefault(c => c.name == crewMember.name);
+                                }
+                                if (finalCrewMember == null)
+                                {
+                                    KCTDebug.LogError("Error when assigning " + crewMember.name + " to " + p.partInfo.name + ". Cannot find Kerbal in list.");
+                                    continue;
+                                }
+                                try
+                                {
+                                    KCTDebug.Log("Assigning " + finalCrewMember.name + " to " + p.partInfo.name);
+                                    if (p.AddCrewmember(finalCrewMember))//p.AddCrewmemberAt(finalCrewMember, crewList.IndexOf(crewMember)))
                                     {
-                                        finalCrewMember = roster.Crew.FirstOrDefault(c => c.name == crewMember.name);
+                                        finalCrewMember.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
+                                        if (finalCrewMember.seat != null)
+                                            finalCrewMember.seat.SpawnCrew();
                                     }
-                                    else if (crewMember.type == ProtoCrewMember.KerbalType.Tourist)
-                                    {
-                                        finalCrewMember = roster.Tourist.FirstOrDefault(c => c.name == crewMember.name);
-                                    }
-                                    if (finalCrewMember == null)
-                                    {
-                                        KCTDebug.LogError("Error when assigning " + crewMember.name + " to " + p.partInfo.name + ". Cannot find Kerbal in list.");
-                                        continue;
-                                    }
-                                    try
-                                    {
-                                        KCTDebug.Log("Assigning " + finalCrewMember.name + " to " + p.partInfo.name);
-                                        if (p.AddCrewmember(finalCrewMember))//p.AddCrewmemberAt(finalCrewMember, crewList.IndexOf(crewMember)))
-                                        {
-                                            finalCrewMember.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
-                                            if (finalCrewMember.seat != null)
-                                                finalCrewMember.seat.SpawnCrew();
-                                        }
-                                        else
-                                        {
-                                            KCTDebug.LogError("Error when assigning " + crewMember.name + " to " + p.partInfo.name);
-                                            finalCrewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
-                                            continue;
-                                        }
-                                    }
-                                    catch
+                                    else
                                     {
                                         KCTDebug.LogError("Error when assigning " + crewMember.name + " to " + p.partInfo.name);
                                         finalCrewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
                                         continue;
                                     }
                                 }
+                                catch
+                                {
+                                    KCTDebug.LogError("Error when assigning " + crewMember.name + " to " + p.partInfo.name);
+                                    finalCrewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
+                                    continue;
+                                }
                             }
                         }
                     }
-                    KCT_GameStates.launchedCrew.Clear();
                 }
+                KCT_GameStates.launchedCrew.Clear();
             }
 
             if (HighLogic.LoadedSceneIsFlight)
@@ -404,12 +402,11 @@ namespace KerbalConstructionTime
                     KCT_AirlaunchPrep alPrep = KCT_GameStates.ActiveKSC.AirlaunchPrep.FirstOrDefault(r => r.associatedID == KCT_GameStates.launchedVessel.id.ToString());
                     if (alPrep != null)
                         KCT_GameStates.ActiveKSC.AirlaunchPrep.Remove(alPrep);
-                }
 
-                if (KCT_GameStates.launchedVessel != null && FlightGlobals.ActiveVessel != null && 
-                    KCT_GameStates.AirlaunchParams != null && KCT_GameStates.AirlaunchParams.VesselId == KCT_GameStates.launchedVessel.id)
-                {
-                    StartCoroutine(AirlaunchRoutine(KCT_GameStates.AirlaunchParams));
+                    if (KCT_GameStates.AirlaunchParams != null && KCT_GameStates.AirlaunchParams.VesselId == KCT_GameStates.launchedVessel.id)
+                    {
+                        StartCoroutine(AirlaunchRoutine(KCT_GameStates.AirlaunchParams, FlightGlobals.ActiveVessel.id));
+                    }
                 }
             }
 
@@ -421,11 +418,18 @@ namespace KerbalConstructionTime
             StartCoroutine(HandleEditorButton_Coroutine());
         }
 
-        private IEnumerator AirlaunchRoutine(AirlaunchParams launchParams)
+        private IEnumerator AirlaunchRoutine(AirlaunchParams launchParams, Guid vesselId)
         {
-            yield return new WaitForSeconds(3);
-            for (int i = 5; i > 0; i--)
+            yield return new WaitForSeconds(2);
+
+            for (int i = 10; i > 0; i--)
             {
+                if (FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.id != vesselId)
+                {
+                    ScreenMessages.PostScreenMessage("[KCT] Airlaunch cancelled", 5f, ScreenMessageStyle.UPPER_CENTER, XKCDColors.Red);
+                    yield break;
+                }
+
                 ScreenMessages.PostScreenMessage($"[KCT] Launching in {i}...", 1f, ScreenMessageStyle.UPPER_CENTER, XKCDColors.Red);
                 yield return new WaitForSeconds(1);
             }

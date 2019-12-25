@@ -2124,7 +2124,7 @@ namespace KerbalConstructionTime
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Azimuth from KSC: ", GUILayout.ExpandWidth(true));
+            GUILayout.Label("Azimuth from Space Center: ", GUILayout.ExpandWidth(true));
             sKscAzimuth = GUILayout.TextField(sKscAzimuth, GUILayout.MaxWidth(70f));
             GUILayout.Label("°", GUILayout.Width(25f));
             GUILayout.EndHorizontal();
