@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace KerbalConstructionTime
 {
@@ -13,7 +14,7 @@ namespace KerbalConstructionTime
         public static String WebVersion = "";
         public static Boolean CheckForUpdate(bool ForceCheck, bool versionSpecific)
         {
-#if !KSP1_4
+#if false
 #if DEBUG
             string updateSite = "http://magico13.net/KCT/latest_beta";
 #else
@@ -22,10 +23,11 @@ namespace KerbalConstructionTime
             if (ForceCheck || WebVersion == "")
             {
                 Debug.Log("[KCT] Checking for updates...");
-                WWW www = new WWW(updateSite);
+
+                UnityWebRequest www = UnityWebRequest.Get(updateSite);
                 while (!www.isDone) { }
 
-                WebVersion = www.text.Trim();
+                WebVersion = www.url.Trim();
                 Debug.Log("[KCT] Received version: " + WebVersion);
                 
                 if (WebVersion == "")

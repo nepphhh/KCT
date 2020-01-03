@@ -3,20 +3,26 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalConstructionTime", "Kerbal_Construction_Time\KerbalConstructionTime.csproj", "{93908B2A-0859-4DAB-8873-D32A4C633308}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalConstructionTime-RO", "Kerbal_Construction_Time\KerbalConstructionTime-RO.csproj", "{93908B2A-0859-4DAB-8873-D32A4C633308}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{612C9FFF-5490-4D3D-AE97-E9622441AA8D}"
 	ProjectSection(SolutionItems) = preProject
 		buildRelease.bat = buildRelease.bat
+		deploy-173.bat = deploy-173.bat
 		deploy.bat = deploy.bat
-		jenkins.txt = jenkins.txt
-		KerbalConstructionTime-RO.version = KerbalConstructionTime-RO.version
-		KerbalConstructionTime-Stock.version = KerbalConstructionTime-Stock.version
-		LGG-Changelog.txt = LGG-Changelog.txt
+		jenkins-173.txt = jenkins-173.txt
+		jenkins-180.txt = jenkins-180.txt
+		KerbalConstructionTime.173.version = KerbalConstructionTime.173.version
+		KerbalConstructionTime.180.version = KerbalConstructionTime.180.version
+		KerbalConstructionTime.RO.version = KerbalConstructionTime.RO.version
+		LGG-Changelog-1.7.3.txt = LGG-Changelog-1.7.3.txt
+		LGG-Changelog-1.8.txt = LGG-Changelog-1.8.txt
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalConstructionTime-KSP1-4", "Kerbal_Construction_Time\KerbalConstructionTime-KSP1-4.csproj", "{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalConstructionTime-1.7.3", "Kerbal_Construction_Time\KerbalConstructionTime-1.7.3.csproj", "{18990461-34A4-4632-8644-EE550B0DF90E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbalConstructionTime-1.8", "Kerbal_Construction_Time\KerbalConstructionTime-1.8.csproj", "{4465AA31-424A-4839-8598-5CD6569439D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,14 +40,22 @@ Global
 		{93908B2A-0859-4DAB-8873-D32A4C633308}.Release|Any CPU.Build.0 = Release|Any CPU
 		{93908B2A-0859-4DAB-8873-D32A4C633308}.Release-1.4|Any CPU.ActiveCfg = Release|Any CPU
 		{93908B2A-0859-4DAB-8873-D32A4C633308}.Release-1.4|Any CPU.Build.0 = Release|Any CPU
-		{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}.Debug-1.4|Any CPU.ActiveCfg = Debug-1.4|Any CPU
-		{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}.Debug-1.4|Any CPU.Build.0 = Debug-1.4|Any CPU
-		{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}.Release-1.4|Any CPU.ActiveCfg = Release-1.4|Any CPU
-		{CF3C81C0-A736-4FC3-A4D4-C31CC759AE20}.Release-1.4|Any CPU.Build.0 = Release-1.4|Any CPU
+		{18990461-34A4-4632-8644-EE550B0DF90E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18990461-34A4-4632-8644-EE550B0DF90E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18990461-34A4-4632-8644-EE550B0DF90E}.Debug-1.4|Any CPU.ActiveCfg = Debug|Any CPU
+		{18990461-34A4-4632-8644-EE550B0DF90E}.Debug-1.4|Any CPU.Build.0 = Debug|Any CPU
+		{18990461-34A4-4632-8644-EE550B0DF90E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18990461-34A4-4632-8644-EE550B0DF90E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18990461-34A4-4632-8644-EE550B0DF90E}.Release-1.4|Any CPU.ActiveCfg = Release|Any CPU
+		{18990461-34A4-4632-8644-EE550B0DF90E}.Release-1.4|Any CPU.Build.0 = Release|Any CPU
+		{4465AA31-424A-4839-8598-5CD6569439D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4465AA31-424A-4839-8598-5CD6569439D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4465AA31-424A-4839-8598-5CD6569439D0}.Debug-1.4|Any CPU.ActiveCfg = Debug|Any CPU
+		{4465AA31-424A-4839-8598-5CD6569439D0}.Debug-1.4|Any CPU.Build.0 = Debug|Any CPU
+		{4465AA31-424A-4839-8598-5CD6569439D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4465AA31-424A-4839-8598-5CD6569439D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4465AA31-424A-4839-8598-5CD6569439D0}.Release-1.4|Any CPU.ActiveCfg = Release|Any CPU
+		{4465AA31-424A-4839-8598-5CD6569439D0}.Release-1.4|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,222 @@
+ChangeLog
+
+1.4.6.17
+	Fixed issue where switching editor building while editing a new vessel would end up having the
+	new vessel rolled out to the wrong launchsite 
+
+1.4.6.16
+	Fixed nullref in the editor when not editing a recovered craft
+
+1.4.6.15
+	Added check for full tanks to the "Fill Tanks" button, which was already there for the "Fill Tanks & Launch" button
+	Deleted old commented out toolbar code
+	Created dedicated deploy-173.bat for local testing
+	Thanks to @siimav for this fix:
+		Fixed lag in editor by moving FindObjectByType to where it was used and not called every frame
+
+1.4.6.14
+	@siimav
+		Fix facility upgrades still not happening instantly when KCT itself is disabled
+		Check for experimental parts in locked parts test
+	Fixed issue where RO fuels weren't being filled when the "Fill Tank" was selected
+
+1.4.6.13
+	Disabled KCT_UpdateChecker using #if false
+
+1.4.6.12
+	Added back in missing files
+	Deleted unneeded ToolbarWrapper.cs
+	Merged in PR from @siimav by hand
+	 
+1.4.6.11
+	Removed the ability to move a ship from VAB to SPH and back
+	Removed all KSP1_4 #if/#endif statements
+	Following are from the RO branch
+		Fixed assembly loading for other mods that reference KCT
+		Can no longer launch vessels with locked parts
+		Those files shouldn't be in the repo
+		Reworked the code that checks for locked parts. Previous version was causing issues with a couple of other mods.
+		Can no longer do 5 more rush builds after editing a vessel
+		Added training warning and disabled Auto-hire button for RP-1
+		Update message text
+		Separated Build+Rollout into Build+Integration+Rollout
+		Fix a nasty infinite loop and add correct estimate to build list
+		Added rollout time to GUI; 
+		Fix vessel editing progress calculations
+		Fix build progress for recovered vessels
+		Refactor BP calculations and apply global multipliers to Effective cost
+		Added effectiveCost field to KCT_BuildListVessel
+		Improve .gitignore
+		Add Effective Cost [E] variable to integration and rollout cost formulas
+		Clean up the editor UI
+		Added formula for calculating rush cost
+		Fix funds being changed by integration cost on launch and recovery
+		Merge LGG->SepIntegration
+		Add missing files to RO csproj
+		Disable transferring vessels between VAB and SPH in RP-1
+		Disable the Switch Editor button while editing an existing vessel. Bad things will happen if the edits are saved in another mode than the initial one
+
+1.4.6.10
+	Fixed new icon positions in directory structure
+	Replaced loading icons from game database with ToolbarController.LoadImageFromFile
+
+1.4.6.9
+	Thanks to github user @ssweim for this:
+		Added Kerbalism as an alternative to TacLifeSupport
+
+1.4.6.8 
+	Added check for Magicore
+	Added check for disabled in Flight and Tracking scenes for recovery purposes
+	Moved icons into PluginData folder
+
+1.4.6.7 (beta)
+	Added InstallChecker
+	Replaced all button logic with the ToolbarController
+	Removed Blizzy toggle
+	Thanks to github user @henrybauer:
+		Added check for a loaded tech tree (The only way you'd get into this situation is by taking a fresh copy of KSP, installing mods (including KCT) and then copying over a saved game from another copy of KSP.)
+	Added interception of the altimiter Recover button, presents a dialog
+	Added check for full tanks at launch, if so, then it won't show the "Fill tanks & launch" button
+	Renamed the Building Plans window to Building Plans & Construction
+	Added a Build button to the Building Plans window
+	Removed the window showing up when hovering over button
+	Removed Settings button
+	Added right-click on toolbar button to bring up settings window
+	Removed unnecessary 2nd set of code to create the toolbar button
+
+	Known issue with the Inventory button (blue button on top in the editor):  Moving the game from 
+	an HD monitor to a standard monitor (in windowed mode), may cause the button to be at 
+	the extreme right when on the standard monitor.  This is not going to be fixed!
+
+
+1.4.6.6
+	Merged PR from RCrockford:
+		Fixes #17 filling tanks doesn't fill EC.
+		Added missing fuels: EC, various RF monoprops, RF solids, TAC-LS resources.
+	Fixed issue of recovered crafts not resetting (#9)
+	Fixed issue of edited craft not being saved (#10)
+	Added line showing science earned to the vessel Complete message (#6)
+
+
+1.4.6.5
+	Fixed initialization of the CTIWrapper
+	Merged PR by @cakepie for fetching the kerbal icon
+
+1.4.6.4
+	Optimized the stock toolbar button texture setting (for the flashing of the button)
+	Removed log spam: UpdateTechlistIconColor
+	Added whitelist of fuels for the "Fill Tanks" & "Fill Tanks and Launch"
+	Moved initialization of static GUI stuff into the loader
+	Fixed memory leak and cause of stuttering in the editor
+	Added automatic sizing and placement to Build Plans button for UI scaling
+	Added TextureScale.cs to support sizing & placement of the buttons
+	Fixed error in loop, was doing a ++ instead of a --
+	Converted many foreach into for loops
+	Fixed issue where launching vessel would not properly load kerbals into crewed part
+
+1.4.6.1
+	Fixed rockets turning 90 degrees at launch, result of an over-enthusiastic fix for the previous bugfix 
+
+1.4.6
+	Fixed the longstanding bug of recovering a vessel via the SPH would rotate it by 90 degrees
+
+1.4.5.10
+	Fixed new bug created when cleaning up some code, the Tech window wasn't appearing.
+
+1.4.5.9
+	Added dynamic window ids, determined at runtime.  Avoids duplicates which lead to strange errors
+
+1.4.5.8
+	Updated stock version file download link
+	Fixed main skin button being changed in the new Build Plans window, was 
+		messing up all other windows after it had been opened one time
+	Updated button to add to building plans to show message if vessel not named or if it is 'Untitled Space Vessel'
+	Added message if no vessel in editor
+
+1.4.5.7
+	This first group was merged to the RO branch:
+		Added AssemblyVersion-RO.tt for the RO build
+		Modified AssemblyVersion-RO.tt to write AssemblyFileVersion instead of AssemblyVersion
+		Commented out the AssemblyFileVersion in VersionInfo.cs
+		Renamed KerbalConstructionTime.version to KerbalConstructionTime-RO.version
+		Added Pre-build steps to run the TextTemplate
+		Added a new directory called SpecialSurprise to hold code not being used for now
+
+	Moved several GUIStyle vars out of DrawBuildListWindow(), made them static and initted them one time only
+	Thanks to @JadeOfMaar for this:
+		Added buttons for the stock toolbar, not fuzzy anymore
+	Renamed existing button files to indicate the size of the icon
+	Added code to deal with "Important" for stock toolbar
+	Changed Fill Tank to ignore locked tanks
+	Added new button on launch dialog:  Fill tanks & Launch, ignores locked tanks
+	Added support for Community Trait Icons for the crew selection. It's optional, but really looks nice
+	Replaced level number by itself with the number in parens, followed by stars in the crew selection 
+	Make crew selection window a bit wider to accomodate the icons
+	Added a Building Plans window
+	New button on top bar in Editor to open up the Building Plans window
+		Will not save a vessel as a plan without a name.
+		Saving a vessel with the same name as an existing one will overwrite the old one
+	Removed all blocks of commented-out code 
+	Fixed jenkins to define the KSP1_4 flag 
+
+1.4.5.6
+	Added #if/#endif around the AssemblyVersion lines
+	Replaced KCT_TechItemIlist Ilist with an ObservableList, thanks @MikeOnTea for the suggestion
+	Moved initialization of the TechList into a method, which is called when the list needs to be initted or cleared
+	Changed hard-coded #if false in KST_UpdateChecker with an #if !KSP1_4
+	Removed old code per RO requests
+
+1.4.5.5
+	Restored missing presets:
+		7 Days - A strict 7 Kerbin day limit between launches. No other time restrictions or use of upgrades.
+		Default - The Default KCT Settings
+		Upgrade Free - Relies entirely on the Stock building upgrades rather than the KCT upgrade system
+		Rodhern Low-tech - Faster low-tech career values
+
+	Fixed inability of mod to recover vessels when other mods have added partmodules to the vessel or it's parts,
+		tested with ScienceAlert, EVAParachutes&EjectionSeat
+
+1.4.5.4
+	Fixed: In the R&D scene all nodes that are being researched are shown in green instead of orange.
+
+1.4.5.3
+	Fixed exception when Scrapyard was installed, caused numerous other issues
+
+
+
+1.4.5.2
+	Fixed Exception upon entry into the editor, caused when multiple launch sites are NOT enabled
+	Fixed embedded version number
+	Disabled the KCT_UpdateChecker class
+
+1.4.5.1
+	Rebuild to remove extra dll
+
+1.4.5
+	1.	Replaced all commented out 1.4 code with #if KSP1_4/#endif blocks
+	2.	Changed the /* 1.4 Addition   to   // 1.4 Addition
+	3.	Added coroutine:  HandleEditorButton_Coroutine() to reset the button 
+		handlers every 1/2 second
+	4.	Added StartCoroutine to end of Start() in KerbalConstructionTime.cs
+
+	The following were done to optimize the code a bit, to remove unnecessary code from a FixedUpdate
+	(I saw a FIXME comment and decided to do so)
+
+	5.	Created new function 
+			KerbalConstructionTime.UpdateTechlistIconColor() 
+		which contains the code which was in the FixedUpdate()
+	6.	Commented out the code in FixedUpdate() which was replaced by new method
+	5.	Changed the TechList from a list to an IList, and in all methods which change the list, 
+		added a call to 
+			KerbalConstructionTime.instance.UpdateTechlistIconColor();
+		to each method in the IList which changes the list.
+
+	More changes, related to release
+
+	6.  Renamed .version to KerbalConstructionTime.version
+	7.  Copied KerbalConstructionTime.version to root directory
+	8.  Renamed KerbalConstructionTime.csproj to KerbalConstructionTime-KSP1-4.csproj
+	9.  Put original KerbalConstructionTime.csproj back in place
+	10. Created stock copy of .version file
+	11. Copied the assemblyversion.tt to AssemblyVersion-Stock.tt
+	12. Modified AssemblyVersion-Stock.tt to use the Stock.version file

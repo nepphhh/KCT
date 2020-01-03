@@ -16,9 +16,15 @@ namespace KerbalConstructionTime
         List<BuildListItem> VABWarehouse = new List<BuildListItem>();
         [Persistent]
         List<BuildListItem> SPHWarehouse = new List<BuildListItem>();
+        [Persistent]
+        List<BuildListItem> VABPlans = new List<BuildListItem>();
+        [Persistent]
+        List<BuildListItem> SPHPlans = new List<BuildListItem>();
 
-        [Persistent]KCT_Recon_Rollout LPRecon = new KCT_Recon_Rollout();
-
+        [Persistent]
+        KCT_Recon_Rollout LPRecon = new KCT_Recon_Rollout();
+        [Persistent]
+        KCT_AirlaunchPrep AirlaunchPrep = new KCT_AirlaunchPrep();
 
         public override void OnDecodeFromConfigNode()
         {
@@ -26,7 +32,10 @@ namespace KerbalConstructionTime
             KCT_GameStates.ActiveKSC.SPHList.Clear();
             KCT_GameStates.ActiveKSC.VABWarehouse.Clear();
             KCT_GameStates.ActiveKSC.SPHWarehouse.Clear();
+            KCT_GameStates.ActiveKSC.VABPlans.Clear();
+            KCT_GameStates.ActiveKSC.SPHPlans.Clear();
             KCT_GameStates.ActiveKSC.Recon_Rollout.Clear();
+            KCT_GameStates.ActiveKSC.AirlaunchPrep.Clear();
 
             foreach (BuildListItem b in VABBuildList)
             {
@@ -52,7 +61,26 @@ namespace KerbalConstructionTime
                // if (ListContains(blv, KCT_GameStates.SPHWarehouse) < 0)
                 KCT_GameStates.ActiveKSC.SPHWarehouse.Add(blv);
             }
+
+            foreach (BuildListItem b in VABPlans)
+            {
+                KCT_BuildListVessel blv = b.ToBuildListVessel();
+                if (KCT_GameStates.ActiveKSC.VABPlans.ContainsKey(blv.shipName))
+                    KCT_GameStates.ActiveKSC.VABPlans.Remove(blv.shipName);
+
+                KCT_GameStates.ActiveKSC.VABPlans.Add(blv.shipName, blv);
+            }
+            foreach (BuildListItem b in SPHPlans)
+            {
+                KCT_BuildListVessel blv = b.ToBuildListVessel();
+                if (KCT_GameStates.ActiveKSC.SPHPlans.ContainsKey(blv.shipName))
+                    KCT_GameStates.ActiveKSC.SPHPlans.Remove(blv.shipName);
+
+                KCT_GameStates.ActiveKSC.SPHPlans.Add(blv.shipName, blv);
+            }
+
             KCT_GameStates.ActiveKSC.Recon_Rollout.Add(LPRecon);
+            KCT_GameStates.ActiveKSC.AirlaunchPrep.Add(AirlaunchPrep);
         }
 
         public override void OnEncodeToConfigNode()
@@ -61,51 +89,8 @@ namespace KerbalConstructionTime
             SPHBuildList.Clear();
             VABWarehouse.Clear();
             SPHWarehouse.Clear();
-           /* foreach (KCT_BuildListVessel b in KCT_GameStates.VABList)
-            {
-                if (b.shipNode == null)
-                {
-                    Debug.LogError("[KCT] WARNING! DATA LOSS EVENT ON " + b.shipName + " IN VABList");
-                    continue;
-                }
-                BuildListItem bls = new BuildListItem();
-                bls.FromBuildListVessel(b);
-                VABBuildList.Add(bls);
-            }
-            foreach (KCT_BuildListVessel b in KCT_GameStates.SPHList)
-            {
-                if (b.shipNode == null)
-                {
-                    Debug.LogError("[KCT] WARNING! DATA LOSS EVENT ON " + b.shipName + " IN SPHList");
-                    continue;
-                }
-                BuildListItem bls = new BuildListItem();
-                bls.FromBuildListVessel(b);
-                SPHBuildList.Add(bls);
-            }
-            foreach (KCT_BuildListVessel b in KCT_GameStates.VABWarehouse)
-            {
-                if (b.shipNode == null)
-                {
-                    Debug.LogError("[KCT] WARNING! DATA LOSS EVENT ON " + b.shipName + " IN VABWarehouse");
-                    continue;
-                }
-                BuildListItem bls = new BuildListItem();
-                bls.FromBuildListVessel(b);
-                VABWarehouse.Add(bls);
-            }
-            foreach (KCT_BuildListVessel b in KCT_GameStates.SPHWarehouse)
-            {
-                if (b.shipNode == null)
-                {
-                    Debug.LogError("[KCT] WARNING! DATA LOSS EVENT ON " + b.shipName + " IN SPHWarehouse");
-                    continue;
-                }
-                BuildListItem bls = new BuildListItem();
-                bls.FromBuildListVessel(b);
-                SPHWarehouse.Add(bls);
-            }
-            LPRecon = KCT_GameStates.LaunchPadReconditioning;*/
+            VABPlans.Clear();
+            SPHPlans.Clear();
         }
 
         public class BuildListItem
@@ -113,7 +98,7 @@ namespace KerbalConstructionTime
             [Persistent]
             string shipName, shipID;
             [Persistent]
-            double progress, buildTime;
+            double progress, effectiveCost, buildTime, integrationTime;
             [Persistent]
             String launchSite, flag;
             //[Persistent]
@@ -121,7 +106,9 @@ namespace KerbalConstructionTime
             [Persistent]
             bool cannotEarnScience;
             [Persistent]
-            float cost = 0, mass = 0, kscDistance = 0;
+            float cost = 0, integrationCost;
+            [Persistent]
+            float mass = 0, kscDistance = 0;
             [Persistent]
             int numStageParts = 0, numStages = 0;
             [Persistent]
@@ -135,7 +122,7 @@ namespace KerbalConstructionTime
 
             public KCT_BuildListVessel ToBuildListVessel()
             {
-                KCT_BuildListVessel ret = new KCT_BuildListVessel(shipName, launchSite, buildTime, flag, cost, EditorFacility);
+                KCT_BuildListVessel ret = new KCT_BuildListVessel(shipName, launchSite, effectiveCost, buildTime, integrationTime, flag, cost, integrationCost, EditorFacility);
                 ret.progress = progress;
                 ret.id = new Guid(shipID);
                 ret.cannotEarnScience = cannotEarnScience;
@@ -153,7 +140,9 @@ namespace KerbalConstructionTime
             public BuildListItem FromBuildListVessel(KCT_BuildListVessel blv)
             {
                 this.progress = blv.progress;
+                this.effectiveCost = blv.effectiveCost;
                 this.buildTime = blv.buildPoints;
+                this.integrationTime = blv.integrationPoints;
                 this.launchSite = blv.launchSite;
                 this.flag = blv.flag;
                 //this.shipURL = blv.shipURL;
@@ -161,6 +150,7 @@ namespace KerbalConstructionTime
                 this.shipID = blv.id.ToString();
                 this.cannotEarnScience = blv.cannotEarnScience;
                 this.cost = blv.cost;
+                this.integrationCost = blv.integrationCost;
                 this.rushBuildClicks = blv.rushBuildClicks;
                 this.mass = blv.TotalMass;
                 this.numStageParts = blv.numStageParts;

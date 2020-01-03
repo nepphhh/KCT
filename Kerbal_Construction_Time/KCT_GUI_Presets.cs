@@ -17,6 +17,7 @@ namespace KerbalConstructionTime
         private static Vector2 presetScrollView, presetMainScroll;
         private static bool changed = false, showFormula = false;
         private static string OMultTmp = "", BEffTmp = "", IEffTmp = "", ReEffTmp = "", MaxReTmp = "";
+
         public static void DrawPresetWindow(int windowID)
         {
             GUIStyle yellowText = new GUIStyle(GUI.skin.label);
@@ -40,24 +41,12 @@ namespace KerbalConstructionTime
             if (presetIndex == -1)
             {
                 SetNewWorkingPreset(null, true);
-                /*presetIndex = presetShortNames.Length - 1;
-                WorkingPreset.name = "Custom";
-                WorkingPreset.shortName = "Custom";
-                WorkingPreset.description = "A custom set of configs.";
-                WorkingPreset.author = HighLogic.SaveFolder;*/
             }
             if (changed && presetIndex < presetShortNames.Length - 1 && !KCT_Utilities.ConfigNodesAreEquivalent(WorkingPreset.AsConfigNode(), KCT_PresetManager.Instance.Presets[presetIndex].AsConfigNode())) //!KCT_PresetManager.Instance.PresetsEqual(WorkingPreset, KCT_PresetManager.Instance.Presets[presetIndex], true)
             {
                 SetNewWorkingPreset(null, true);
-                /*presetIndex = presetShortNames.Length - 1; //Custom preset
-                WorkingPreset.name = "Custom";
-                WorkingPreset.shortName = "Custom";
-                WorkingPreset.description = "A custom set of configs.";
-                WorkingPreset.author = HighLogic.SaveFolder;*/
             }
-           /* presetIndex = KCT_PresetManager.Instance.GetIndex(WorkingPreset); //Check that the current preset is equal to the expected one
-            if (presetIndex == -1) 
-                presetIndex = presetNames.Length - 1;*/
+
             int prev = presetIndex;
             presetIndex = GUILayout.SelectionGrid(presetIndex, presetShortNames, 1);
             if (prev != presetIndex) //If a new preset was selected
@@ -69,10 +58,6 @@ namespace KerbalConstructionTime
                 else
                 {
                     SetNewWorkingPreset(null, true);
-                    /*WorkingPreset.name = "Custom";
-                    WorkingPreset.shortName = "Custom";
-                    WorkingPreset.description = "A custom set of configs.";
-                    WorkingPreset.author = HighLogic.SaveFolder;*/
                 }
             }
 
@@ -251,8 +236,23 @@ namespace KerbalConstructionTime
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
+                GUILayout.Label("IntegrationCosts: ");
+                WorkingPreset.formulaSettings.IntegrationCostFormula = GUILayout.TextField(WorkingPreset.formulaSettings.IntegrationCostFormula, GUILayout.Width(textWidth));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("IntegrationTime: ");
+                WorkingPreset.formulaSettings.IntegrationTimeFormula = GUILayout.TextField(WorkingPreset.formulaSettings.IntegrationTimeFormula, GUILayout.Width(textWidth));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("NewLaunchPadCost: ");
                 WorkingPreset.formulaSettings.NewLaunchPadCostFormula = GUILayout.TextField(WorkingPreset.formulaSettings.NewLaunchPadCostFormula, GUILayout.Width(textWidth));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("RushCost: ");
+                WorkingPreset.formulaSettings.RushCostFormula = GUILayout.TextField(WorkingPreset.formulaSettings.RushCostFormula, GUILayout.Width(textWidth));
                 GUILayout.EndHorizontal();
             }
 
@@ -268,8 +268,6 @@ namespace KerbalConstructionTime
                 KCT_PresetManager.Instance.ActivePreset = WorkingPreset;
                 KCT_PresetManager.Instance.SaveActiveToSaveData();
                 WorkingPreset = null;
-                showSettings = false;
-
 
                 if (!KCT_PresetManager.Instance.ActivePreset.generalSettings.Enabled)
                     KCT_Utilities.DisableModFunctionality();
@@ -280,7 +278,7 @@ namespace KerbalConstructionTime
                 KCT_GameStates.settings.OverrideLaunchButton = overrideLaunchBtn;
                 KCT_GameStates.settings.Debug = debug;
                 KCT_GameStates.settings.AutoKACAlarms = autoAlarms;
-                KCT_GameStates.settings.PreferBlizzyToolbar = useBlizzyToolbar;
+                // KCT_GameStates.settings.PreferBlizzyToolbar = useBlizzyToolbar;
                 KCT_GameStates.settings.CheckForDebugUpdates = debugUpdateChecking;
 
                 KCT_GameStates.settings.Save();
@@ -288,8 +286,12 @@ namespace KerbalConstructionTime
                 if (!PrimarilyDisabled && !showFirstRun)
                 {
                     ResetBLWindow();
-                    if (KCT_Events.instance.KCTButtonStock != null)
-                        KCT_Events.instance.KCTButtonStock.SetTrue();
+                   
+                    //if (KCT_Events.instance.KCTButtonStock != null)
+                    //    KCT_Events.instance.KCTButtonStock.SetTrue();
+                    if (KCT_GameStates.toolbarControl != null)
+                        KCT_GameStates.toolbarControl.SetTrue();
+
                     else
                     {
                         showBuildList = true;
@@ -314,8 +316,12 @@ namespace KerbalConstructionTime
                 if (!PrimarilyDisabled && !showFirstRun)
                 {
                     ResetBLWindow();
-                    if (KCT_Events.instance.KCTButtonStock != null)
-                        KCT_Events.instance.KCTButtonStock.SetTrue();
+                    
+                    //if (KCT_Events.instance.KCTButtonStock != null)
+                    //    KCT_Events.instance.KCTButtonStock.SetTrue();
+                    if (KCT_GameStates.toolbarControl != null)
+                        KCT_GameStates.toolbarControl.SetTrue();
+
                     else
                         showBuildList = true;
                 }
@@ -349,12 +355,14 @@ namespace KerbalConstructionTime
             forceStopWarp = GUILayout.Toggle(forceStopWarp, "Auto Stop TimeWarp", HighLogic.Skin.button);
             autoAlarms = GUILayout.Toggle(autoAlarms, "Auto KAC Alarms", HighLogic.Skin.button);
             overrideLaunchBtn = GUILayout.Toggle(overrideLaunchBtn, "Override Launch Button", HighLogic.Skin.button);
-            useBlizzyToolbar = GUILayout.Toggle(useBlizzyToolbar, "Use Toolbar Mod", HighLogic.Skin.button);
+            //useBlizzyToolbar = GUILayout.Toggle(useBlizzyToolbar, "Use Toolbar Mod", HighLogic.Skin.button);
             disableAllMsgs = !GUILayout.Toggle(!disableAllMsgs, "Use Message System", HighLogic.Skin.button);
             debug = GUILayout.Toggle(debug, "Debug Logging", HighLogic.Skin.button);
+
 #if DEBUG
             debugUpdateChecking = GUILayout.Toggle(debugUpdateChecking, "Check for Dev Updates", HighLogic.Skin.button);
 #endif
+
             GUILayout.EndVertical();
             GUILayout.EndVertical();
             

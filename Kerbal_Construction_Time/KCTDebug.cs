@@ -8,6 +8,10 @@ namespace KerbalConstructionTime
 {
     public class KCTDebug
     {
+        public static void LogError(object message)
+        {
+            Log(message, true);
+        }
         public static void Log(object message, bool always = false)
         {
         #if DEBUG

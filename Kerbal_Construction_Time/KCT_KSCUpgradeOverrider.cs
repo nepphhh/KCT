@@ -130,7 +130,7 @@ namespace KerbalConstructionTime
             string facilityID = GetFacilityID();
 
             string gate = GetTechGate(facilityID, oldLevel + 1);
-            Debug.Log("[KCTT] Gate for " + facilityID + "? " + gate);
+            KCTDebug.Log("[KCTT] Gate for " + facilityID + "? " + gate);
             if (!string.IsNullOrEmpty(gate))
             {
                 if (ResearchAndDevelopment.GetTechnologyState(gate) != RDTech.State.Available)

@@ -24,25 +24,22 @@
 #
 
 # 0:KSPVersion
-# 0:1.3
+0:1.7.3
 
 
 # 1:GAMEDIR, VERSIONFILE [, GITHUBREPO ]
-1:KerbalConstructionTime, KerbalConstructionTime-Stock.version, KCT
+1:KerbalConstructionTime, KerbalConstructionTime.173.version, KCT
+
+# compiler Compiler options and flags
+#2c:-d:KSP1_4
 
 # 2:PROJNAME, PROJFILE, VERSIONFILE, PLUGINSFOLDER
-2:Kerbal_Construction_Time,Kerbal_Construction_Time/KerbalConstructionTime-KSP1-4.csproj,KerbalConstructionTime-Stock.version,GameData/KerbalConstructionTime/Plugins
+2:Kerbal_Construction_Time,Kerbal_Construction_Time/KerbalConstructionTime-1.7.3.csproj,KerbalConstructionTime.173.version,GameData/KerbalConstructionTime/Plugins
 
 # 3:SOURCEFILE, DESTDIR
-3:KerbalConstructionTime-Stock.version,GameData/KerbalConstructionTime
-#3:LICENSE.md,GameData/KerbalHotSeat
-#3:README.md,GameData/KerbalHotSeat
+3:KerbalConstructionTime.173.version,GameData/KerbalConstructionTime
 
-# 4:SOURCDIR, DESTDIR
-#4:Textures,GameData/ManeuverQueue/Textures
 
-# 5:ModuleManager
-# 5:ModuleManager
 
 # 6:mod_id
 #6:1272
@@ -56,8 +53,7 @@
 #8:ConnectedLivingSpace
 
 
-NOT:1.4.5
-#NOT:1.5.1
+#DO:1.6.1
 
 #
 # End of file

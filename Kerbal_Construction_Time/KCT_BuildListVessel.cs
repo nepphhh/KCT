@@ -10,16 +10,19 @@ namespace KerbalConstructionTime
 {
     public class KCT_BuildListVessel : IKCTBuildItem
     {
-        private ShipConstruct ship;
-        public double progress, buildPoints;
+        public enum ListType { None, VAB, SPH, TechNode, Reconditioning, KSC };
+
+        internal ShipConstruct ship;
+        private double rushCost = -1;
+        public double progress, effectiveCost, buildPoints, integrationPoints;
         public String launchSite, flag, shipName;
         public int launchSiteID = -1;
         public ListType type;
-        public enum ListType { None, VAB, SPH, TechNode, Reconditioning, KSC };
         public ConfigNode shipNode;
         public Guid id;
         public bool cannotEarnScience;
-        public float cost = 0, TotalMass = 0, DistanceFromKSC = 0;
+        public float cost = 0, integrationCost;
+        public float TotalMass = 0, DistanceFromKSC = 0;
         public int rushBuildClicks = 0;
         public int numStages = 0;
         public int numStageParts = 0;
@@ -31,7 +34,7 @@ namespace KerbalConstructionTime
             get
             {
                 if (buildRate > 0)
-                    return (buildPoints-progress)/buildRate;
+                    return (integrationPoints + buildPoints - progress) / buildRate;
                 else
                     return double.PositiveInfinity;
             }
@@ -40,6 +43,10 @@ namespace KerbalConstructionTime
             get
             {
                 List<Part> temp = new List<Part>();
+                //
+                // Trying to change the following to a simple (for int i = ...
+                // doesn't work for some reason
+                //
                 foreach (PseudoPart PP in this.GetPseudoParts())
                 {
                     Part p = KCT_Utilities.GetAvailablePartByName(PP.name).partPrefab;
@@ -56,7 +63,7 @@ namespace KerbalConstructionTime
                 return this.shipNode.GetNodes("PART").ToList();
             }
         }
-        public bool isFinished { get { return progress >= buildPoints; } }
+        public bool isFinished { get { return progress >= buildPoints + integrationPoints; } }
 
         private KCT_KSC _ksc = null;
         public KCT_KSC KSC
@@ -97,7 +104,7 @@ namespace KerbalConstructionTime
             get { return _desiredManifest; }
         }
 
-        public KCT_BuildListVessel(ShipConstruct s, String ls, double bP, String flagURL)
+        public KCT_BuildListVessel(ShipConstruct s, String ls, double effCost, double bP, String flagURL)
         {
             ship = s;
             shipNode = s.SaveShip();
@@ -110,6 +117,10 @@ namespace KerbalConstructionTime
             HashSet<int> stages = new HashSet<int>();
             numStageParts = 0;
             stagePartCost = 0d;
+            //for (int i = s.Parts.Count - 1; i >= 0; i--)
+            //{
+            //    Part p = s.Parts[i];
+            
             foreach (Part p in s.Parts)
             {
                 if (p.stagingOn)
@@ -122,6 +133,7 @@ namespace KerbalConstructionTime
             numStages = stages.Count;
 
             launchSite = ls;
+            effectiveCost = effCost;
             buildPoints = bP;
             progress = 0;
             flag = flagURL;
@@ -138,21 +150,35 @@ namespace KerbalConstructionTime
             DesiredManifest = new List<string>();
             if (CrewAssignmentDialog.Instance?.GetManifest()?.CrewCount > 0)
             {
+                //var pcm = CrewAssignmentDialog.Instance.GetManifest().GetAllCrew(true) ?? new List<ProtoCrewMember>();
+                //for (int i = pcm.Count - 1; i >= 0; i--)
+                //{
+                //    ProtoCrewMember crew = pcm[i];
                 foreach (ProtoCrewMember crew in CrewAssignmentDialog.Instance.GetManifest().GetAllCrew(true) ?? new List<ProtoCrewMember>())
                 {
-                   
-                        DesiredManifest.Add(crew?.name ?? string.Empty);
-                    
+                    DesiredManifest.Add(crew?.name ?? string.Empty);
                 }
             }
+
+            if (effectiveCost == default(double))
+            {
+                // Can only happen in older saves that didn't have Effective cost persisted as a separate field
+                // This code should be safe to remove after a while.
+                effectiveCost = KCT_Utilities.GetEffectiveCost(shipNode.GetNodes("PART").ToList());
+            }
+
+            integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(this);
+            integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(this);
         }
 
-        public KCT_BuildListVessel(String name, String ls, double bP, String flagURL, float spentFunds, int EditorFacility)
+        public KCT_BuildListVessel(String name, String ls, double effCost, double bP, double integrP, String flagURL, float spentFunds, float integrCost, int EditorFacility)
         {
             //ship = new ShipConstruct();
             launchSite = ls;
             shipName = name;
+            effectiveCost = effCost;
             buildPoints = bP;
+            integrationPoints = integrP;
             progress = 0;
             flag = flagURL;
             if (EditorFacility == (int)EditorFacilities.VAB)
@@ -163,22 +189,18 @@ namespace KerbalConstructionTime
                 type = ListType.None;
             cannotEarnScience = false;
             cost = spentFunds;
+            integrationCost = integrCost;
         }
 
         //private ProtoVessel recovered;
-
-        public KCT_BuildListVessel(Vessel vessel) //For recovered vessels
+        public KCT_BuildListVessel(ProtoVessel pvessel, ConfigNode vesselNode, KCT_BuildListVessel.ListType listType = ListType.None) //For recovered vessels
         {
-           /* if (KCT_GameStates.recoveryRequestVessel == null)
-            {
-                KCTDebug.Log("Somehow tried to recover something that was null!");
-                return;
-            }*/
-
-
             id = Guid.NewGuid();
-            shipName = vessel.vesselName;
-            shipNode = FromInFlightVessel(vessel);
+            shipName = pvessel.vesselName;
+            shipNode = vesselNode;
+
+            if (listType != ListType.None)
+                this.type = listType;
 
             cost = KCT_Utilities.GetTotalVesselCost(shipNode);
             emptyCost = KCT_Utilities.GetTotalVesselCost(shipNode, false);
@@ -186,7 +208,11 @@ namespace KerbalConstructionTime
             emptyMass = 0;
 
             HashSet<int> stages = new HashSet<int>();
-            foreach (ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
+            //for (int i = vessel.protoVessel.protoPartSnapshots.Count - 1; i >= 0; i--)
+            //{
+            //    ProtoPartSnapshot p = vessel.protoVessel.protoPartSnapshots[i];
+
+            foreach (ProtoPartSnapshot p in pvessel.protoPartSnapshots)
             {
                 stages.Add(p.inverseStageIndex);
 
@@ -195,6 +221,10 @@ namespace KerbalConstructionTime
 
                 TotalMass += p.mass;
                 emptyMass += p.mass;
+                //for (int i1 = p.resources.Count - 1; i1 >= 0; i1--)
+                //{
+                //    ProtoPartResourceSnapshot rsc = p.resources[i1];
+
                 foreach (ProtoPartResourceSnapshot rsc in p.resources)
                 {
                     PartResourceDefinition def = PartResourceLibrary.Instance.GetDefinition(rsc.resourceName);
@@ -210,12 +240,67 @@ namespace KerbalConstructionTime
             flag = HighLogic.CurrentGame.flagURL;
             progress = buildPoints;
 
-            DistanceFromKSC = (float)SpaceCenter.Instance.GreatCircleDistance(SpaceCenter.Instance.cb.GetRelSurfaceNVector(vessel.latitude, vessel.longitude));
+            DistanceFromKSC = 0; // (float)SpaceCenter.Instance.GreatCircleDistance(SpaceCenter.Instance.cb.GetRelSurfaceNVector(vessel.latitude, vessel.longitude));
 
             rushBuildClicks = 0;
         }
 
-        private ConfigNode FromInFlightVessel(Vessel VesselToSave)
+        public KCT_BuildListVessel(Vessel vessel, KCT_BuildListVessel.ListType listType = ListType.None) //For recovered vessels
+        {
+            id = Guid.NewGuid();
+            shipName = vessel.vesselName;
+            shipNode = FromInFlightVessel(vessel, listType);
+            if (listType != ListType.None)
+                this.type = listType;
+
+            cost = KCT_Utilities.GetTotalVesselCost(shipNode);
+            emptyCost = KCT_Utilities.GetTotalVesselCost(shipNode, false);
+            TotalMass = 0;
+            emptyMass = 0;
+
+            HashSet<int> stages = new HashSet<int>();
+            //for (int i = vessel.protoVessel.protoPartSnapshots.Count - 1; i >= 0; i--)
+            //{
+            //    ProtoPartSnapshot p = vessel.protoVessel.protoPartSnapshots[i];
+            
+            foreach (ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
+            {
+                stages.Add(p.inverseStageIndex);
+
+                if (p.partPrefab != null && p.partPrefab.Modules.Contains<LaunchClamp>())
+                    continue;
+
+                TotalMass += p.mass;
+                emptyMass += p.mass;
+                //for (int i1 = p.resources.Count - 1; i1 >= 0; i1--)
+                //{
+                //    ProtoPartResourceSnapshot rsc = p.resources[i1];
+                
+                foreach (ProtoPartResourceSnapshot rsc in p.resources)
+                {
+                    PartResourceDefinition def = PartResourceLibrary.Instance.GetDefinition(rsc.resourceName);
+                    if (def != null)
+                        TotalMass += def.density * (float)rsc.amount;
+                }
+            }
+            cannotEarnScience = true;
+            numStages = stages.Count;
+            // FIXME ignore stageable part count and cost - it'll be fixed when we put this back in the editor.
+
+            effectiveCost = KCT_Utilities.GetEffectiveCost(shipNode.GetNodes("PART").ToList());
+            buildPoints = KCT_Utilities.GetBuildTime(effectiveCost);
+            flag = HighLogic.CurrentGame.flagURL;
+
+            DistanceFromKSC = (float)SpaceCenter.Instance.GreatCircleDistance(SpaceCenter.Instance.cb.GetRelSurfaceNVector(vessel.latitude, vessel.longitude));
+
+            rushBuildClicks = 0;
+            integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(this);
+            integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(this);
+
+            progress = buildPoints + integrationPoints;
+        }
+
+        private ConfigNode FromInFlightVessel(Vessel VesselToSave, KCT_BuildListVessel.ListType listType)
         {
             //This code is taken from InflightShipSave by Claw, using the CC-BY-NC-SA license.
             //This code thus is licensed under the same license, despite the GPLv3 license covering original KCT code
@@ -229,9 +314,9 @@ namespace KerbalConstructionTime
             Quaternion OriginalRotation = VesselToSave.vesselTransform.rotation;
             Vector3 OriginalPosition = VesselToSave.vesselTransform.position;
 
-            if (type == ListType.SPH)
+            if (listType == ListType.SPH)
             {
-                VesselToSave.SetRotation(new Quaternion(0, 0, 0, 1)); //TODO: Figure out the orientation this should be
+                VesselToSave.SetRotation(new Quaternion((float)Math.Sqrt(0.5), 0, 0, (float)Math.Sqrt(0.5))); 
             }
             else
             {
@@ -243,7 +328,7 @@ namespace KerbalConstructionTime
             ConfigNode CN = new ConfigNode("ShipConstruct");
             CN = ConstructToSave.SaveShip();
             SanitizeShipNode(CN);
-
+            // These are actually needed, do not comment them out
             VesselToSave.SetRotation(OriginalRotation);
             VesselToSave.SetPosition(OriginalPosition);
             //End of Claw's code. Thanks Claw!
@@ -260,8 +345,18 @@ namespace KerbalConstructionTime
             }
             ConfigNode ModuleTemplates = ConfigNode.Load(filePath);
             ConfigNode[] templates = ModuleTemplates.GetNodes("MODULE");
+
+            //var nodes = node.GetNodes("PART");
+            //for (int i = nodes.Count() - 1; i >= 0; i--)
+            //{
+            //    ConfigNode part = nodes[i];
             foreach(ConfigNode part in node.GetNodes("PART"))
             {
+                //var modules = part.GetNodes("MODULE");  // error is here
+                //for (int i1 = modules.Count() - 1; i1 >= 0; i1--)
+                //{
+                //    ConfigNode module = modules[i1];
+                
                 foreach(ConfigNode module in part.GetNodes("MODULE"))
                 {
                     SanitizeNode(KCT_Utilities.PartNameFromNode(part), module, templates);
@@ -283,56 +378,41 @@ namespace KerbalConstructionTime
 
             ConfigNode template = templates.FirstOrDefault(t => t.GetValue("name") == name && (!t.HasValue("parts") || t.GetValue("parts").Split(',').Contains(partName)));
             if (template == null) return;
-            ConfigNode.ValueList values = template.values;
-            foreach (ConfigNode.Value val in values)
+            //ConfigNode.ValueList values = template.values;
+            //for (int i = values.Count - 1; i >= 0; i--)
+            //{
+            //    ConfigNode.Value val = values[i];
+            
+            foreach (ConfigNode.Value val in template.values)
             {
                 module.SetValue(val.name, val.value);
             }
 
+            //ConfigNode[] nodes = template.GetNodes();
+            //for (int i = nodes.Length -1; i >= 0; i--)
+            //{
+            //    ConfigNode node = nodes[i];
             foreach (ConfigNode node in template.GetNodes()) //This should account for nested nodes, like RealChutes' PARACHUTE node
             {
                 if (module.HasNode(node.name))
                 {
-                    foreach (ConfigNode.Value val in node.values)
+                    for (int i1 = node.values.Count - 1; i1 >= 0; i1--)
+                    {
+                        ConfigNode.Value val = node.values[i1];
+                        //foreach (ConfigNode.Value val in node.values)
                         module.GetNode(node.name).SetValue(val.name, val.value);
+                    }
                 }
             }
 
+            //nodes = module.GetNodes("MODULE");
+            //for (int i = nodes.Count() - 1; i >= 0; i--)
+            //{
+            //    ConfigNode node = nodes[i];
+
             foreach (ConfigNode node in module.GetNodes("MODULE"))
                 SanitizeNode(partName, node, templates);
-
-
-            /*
-            if (name.Contains("ModuleEngines"))
-            {
-                module.SetValue("staged", "False");
-                module.SetValue("flameout", "False");
-                module.SetValue("EngineIgnited", "False");
-                module.SetValue("engineShutdown", "False");
-                module.SetValue("currentThrottle", "0");
-                module.SetValue("manuallyOverridden", "False");
-            }
-            else if (name == "ModuleScienceExperiment")
-            {
-                module.SetValue("Deployed", "False");
-                module.SetValue("Inoperable", "False");
-            }
-            else if (name == "ModuleParachute")
-            {
-                module.SetValue("staged", "False");
-                module.SetValue("persistentState", "STOWED");
-            }
-            else if (name == "Log")
-            {
-                module.ClearValues();
-            }
-
-            if (module.HasNode("ScienceData"))
-            {
-                module.RemoveNodes("ScienceData");
-            }
-            */
-
+            //}
         }
 
         private void CreateInitialTemplates()
@@ -414,27 +494,37 @@ namespace KerbalConstructionTime
 
         public KCT_BuildListVessel NewCopy(bool RecalcTime)
         {
-            KCT_BuildListVessel ret = new KCT_BuildListVessel(this.shipName, this.launchSite, this.buildPoints, this.flag, this.cost, (int)GetEditorFacility());
+            KCT_BuildListVessel ret = new KCT_BuildListVessel(this.shipName, this.launchSite, this.effectiveCost, this.buildPoints, this.integrationPoints, this.flag, this.cost, this.integrationCost, (int)GetEditorFacility());
             ret.shipNode = this.shipNode.CreateCopy();
 
             //refresh all inventory parts to new
-            foreach (ConfigNode part in ret.ExtractedPartNodes)
+            for (int i = ret.ExtractedPartNodes.Count - 1; i >= 0; i--)
             {
+                ConfigNode part = ret.ExtractedPartNodes[i];
+            
+            //foreach (ConfigNode part in ret.ExtractedPartNodes)
+            //{
                 ScrapYardWrapper.RefreshPart(part);
             }
 
             ret.id = Guid.NewGuid();
-            if (RecalcTime)
-            {
-                ret.buildPoints = KCT_Utilities.GetBuildTime(ret.ExtractedPartNodes);
-            }
             ret.TotalMass = this.TotalMass;
             ret.emptyMass = this.emptyMass;
             ret.cost = this.cost;
+            ret.integrationCost = this.integrationCost;
             ret.emptyCost = this.emptyCost;
             ret.numStageParts = this.numStageParts;
             ret.numStages = this.numStages;
             ret.stagePartCost = this.stagePartCost;
+
+            if (RecalcTime)
+            {
+                ret.effectiveCost = KCT_Utilities.GetEffectiveCost(ret.ExtractedPartNodes);
+                ret.buildPoints = KCT_Utilities.GetBuildTime(ret.effectiveCost);
+                ret.integrationPoints = KCT_MathParsing.ParseIntegrationTimeFormula(ret);
+                ret.integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(ret);
+            }
+
             return ret;
         }
 
@@ -496,7 +586,7 @@ namespace KerbalConstructionTime
             return ship;
         }
 
-        public void Launch()
+        public void Launch(bool fillFuel = false)
         {
             if (GetEditorFacility() == EditorFacilities.VAB)
             {
@@ -509,6 +599,8 @@ namespace KerbalConstructionTime
 
             string tempFile = KSPUtil.ApplicationRootPath + "saves/" + HighLogic.SaveFolder + "/Ships/temp.craft";
             UpdateRFTanks();
+            if (fillFuel)
+                FillUnlockedFuelTanks();
             shipNode.Save(tempFile);
             FlightDriver.StartWithNewLaunch(tempFile, flag, launchSite, new VesselCrewManifest());
             KCT_GameStates.LaunchFromTS = false;
@@ -584,10 +676,20 @@ namespace KerbalConstructionTime
 
         private void UpdateRFTanks()
         {
-            foreach (ConfigNode cn in shipNode.GetNodes("PART"))
+            var nodes = shipNode.GetNodes("PART");
+            for (int i = nodes.Count() - 1; i >= 0; i--)
             {
-                foreach (ConfigNode module in cn.GetNodes("MODULE"))
+                ConfigNode cn = nodes[i];
+
+                //foreach (ConfigNode cn in shipNode.GetNodes("PART"))
+                //{
+                var modules = cn.GetNodes("MODULE");
+                for (int im = modules.Count() - 1; im >= 0; im--)
                 {
+                    ConfigNode module = modules[im];
+                
+                    //foreach (ConfigNode module in cn.GetNodes("MODULE"))
+                    //{
                     if (module.GetValue("name") == "ModuleFuelTanks")
                     {
                         if (module.HasValue("timestamp"))
@@ -600,13 +702,106 @@ namespace KerbalConstructionTime
             }
         }
 
+        internal bool TanksFull()
+        {
+            foreach (ConfigNode p in shipNode.GetNodes("PART"))
+            {
+                if (KCT_Utilities.PartIsProcedural(p))
+                {
+                    var resList = p.GetNodes("RESOURCE");
+                    foreach (var res in resList)
+                    {
+                        if (KCT_GuiDataAndWhitelistItemsDatabase.validFuelRes.Contains(res.GetValue("name")))
+                        {
+                            bool flowState = bool.Parse(res.GetValue("flowState"));
+                            if (flowState)
+                            {
+                                var maxAmt = float.Parse( res.GetValue("maxAmount"));
+                                var amt = float.Parse(res.GetValue("amount"));
+                                if (Math.Abs(amt-maxAmt) >= 1)
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var resList = p.GetNodes("RESOURCE");
+                    foreach (var res in resList)
+                    {
+                        var name = res.GetValue("name");
+                        if (KCT_GuiDataAndWhitelistItemsDatabase.validFuelRes.Contains(name))
+                        {
+                            bool flowState = bool.Parse(res.GetValue("flowState"));
+                            if (flowState)
+                            {
+                                var maxAmt = float.Parse(res.GetValue("maxAmount"));
+                                var amt = float.Parse(res.GetValue("amount"));
+                                if (Math.Abs(amt - maxAmt) >= 1)
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+    
+        private void FillUnlockedFuelTanks()
+        {
+            foreach (ConfigNode p in shipNode.GetNodes("PART"))
+            {
+                //fill as part prefab would be filled?
+                if (KCT_Utilities.PartIsProcedural(p))
+                {
+                    var resList = p.GetNodes("RESOURCE");
+                    foreach (var res in resList)
+                    {
+                        if (KCT_GuiDataAndWhitelistItemsDatabase.validFuelRes.Contains(res.GetValue("name")))
+                        {
+                            bool flowState = bool.Parse(res.GetValue("flowState"));
+                            if (flowState)
+                            {
+                                var maxAmt = res.GetValue("maxAmount");
+                                res.SetValue("amount", maxAmt);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var resList = p.GetNodes("RESOURCE");
+                    foreach (var res in resList)
+                    {
+                        var name = res.GetValue("name");
+                        if (KCT_GuiDataAndWhitelistItemsDatabase.validFuelRes.Contains(name))
+                        {
+                            bool flowState = bool.Parse(res.GetValue("flowState"));
+                            if (flowState)
+                            {
+                                var maxAmt = res.GetValue("maxAmount");
+                                res.SetValue("amount", maxAmt);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         public double GetTotalMass()
         {
             if (TotalMass != 0 && emptyMass != 0) return TotalMass;
             TotalMass = 0;
             emptyMass = 0;
-            foreach (ConfigNode p in this.ExtractedPartNodes)
+            for (int i = this.ExtractedPartNodes.Count - 1; i >= 0; i--)
             {
+                ConfigNode p = ExtractedPartNodes[i];
+            //foreach (ConfigNode p in this.ExtractedPartNodes)
+            //{
                 TotalMass += KCT_Utilities.GetPartMassFromNode(p, includeFuel: true, includeClamps: false);
                 emptyMass += KCT_Utilities.GetPartMassFromNode(p, includeFuel: false, includeClamps: false);
             }
@@ -619,11 +814,36 @@ namespace KerbalConstructionTime
 
         public double GetTotalCost()
         {
-            if (cost != 0 && emptyCost != 0) return cost;
-            cost = KCT_Utilities.GetTotalVesselCost(shipNode);
-            emptyCost = KCT_Utilities.GetTotalVesselCost(shipNode, false);
-            //return KCT_Utilities.GetTotalVesselCost(shipNode);
-            return cost;
+            if (cost == 0 || emptyCost == 0)
+            {
+                cost = KCT_Utilities.GetTotalVesselCost(shipNode);
+                emptyCost = KCT_Utilities.GetTotalVesselCost(shipNode, false);
+                integrationCost = (float)KCT_MathParsing.ParseIntegrationCostFormula(this);
+            }
+
+            return cost + integrationCost;
+        }
+
+        public double GetRushCost()
+        {
+            if (rushCost > -1) return rushCost;
+
+            rushCost = KCT_MathParsing.ParseRushCostFormula(this);
+            return rushCost;
+        }
+
+        public bool DoRushBuild()
+        {
+            double rushCost = GetRushCost();
+            if (Funding.Instance.Funds < rushCost) return false;
+
+            double remainingBP = buildPoints + integrationPoints - progress;
+            AddProgress(remainingBP * 0.1);
+            KCT_Utilities.SpendFunds(rushCost, TransactionReasons.None);
+            ++rushBuildClicks;
+            this.rushCost = -1;    // force recalculation of rush cost
+
+            return true;
         }
 
         public bool RemoveFromBuildList()
@@ -810,42 +1030,49 @@ namespace KerbalConstructionTime
             return lockedPartsOnShip;
         }
 
-        public double AddProgress(double toAdd)
-        {
-            progress+=toAdd;
-            return progress;
-        }
-
         public double ProgressPercent()
         {
-            return 100 * (progress / buildPoints);
+            return 100 * (progress / (buildPoints + integrationPoints));
         }
 
-        string IKCTBuildItem.GetItemName()
+        public string GetItemName()
         {
             return this.shipName;
         }
 
-        double IKCTBuildItem.GetBuildRate()
+        public double GetBuildRate()
         {
             return this.buildRate;
         }
 
-        double IKCTBuildItem.GetTimeLeft()
+        public double GetTimeLeft()
         {
             return this.timeLeft;
         }
 
-        ListType IKCTBuildItem.GetListType()
+        public ListType GetListType()
         {
             return this.type;
         }
 
-        bool IKCTBuildItem.IsComplete()
+        public bool IsComplete()
         {
-            return (progress >= buildPoints);
+            return (progress >= buildPoints + integrationPoints);
         }
 
+        public void IncrementProgress(double UTDiff)
+        {
+            double buildRate = KCT_Utilities.GetBuildRate(this);
+            AddProgress(buildRate * UTDiff);
+            if (IsComplete())
+                KCT_Utilities.MoveVesselToWarehouse(this);
+        }
+
+        private double AddProgress(double toAdd)
+        {
+            progress += toAdd;
+            return progress;
+        }
     }
 
     public class PseudoPart

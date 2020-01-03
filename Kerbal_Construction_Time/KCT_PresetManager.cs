@@ -323,8 +323,6 @@ namespace KerbalConstructionTime
             VABRecoveryTech = null;
         [Persistent]
         public int MaxRushClicks = 0;
-        [Persistent]
-        public float RushMultiplier = 0.2f;
     }
 
     public class KCT_Preset_Time : ConfigNodeStorage
@@ -349,8 +347,13 @@ namespace KerbalConstructionTime
             BuildRateFormula = "(([I]+1)*0.05*[N] + max(0.1-[I], 0))*sign(2*[L]-[I]+1)",
             UpgradeResetFormula = "2*([N]+1)", //N = number of times it's been reset
             InventorySaleFormula = "([V]+[P] / 10000)^(0.5)", //Gives the TOTAL amount of points, decimals are kept //[V] = inventory value in funds, [P] = Value of all previous sales combined
+            IntegrationTimeFormula = "0", //[M]=Vessel loaded mass, [m]=vessel empty mass, [C]=vessel loaded cost, [c]=vessel empty cost, [BP]=vessel BPs, [E]=editor level, [L]=launch site level (pad), [VAB]=1 if VAB craft, 0 if SPH
             RolloutCostFormula = "0", //[M]=Vessel loaded mass, [m]=vessel empty mass, [C]=vessel loaded cost, [c]=vessel empty cost, [BP]=vessel BPs, [E]=editor level, [L]=launch site level (pad), [VAB]=1 if VAB craft, 0 if SPH
-            NewLaunchPadCostFormula = "100000*([N]^3)"; //[N]=total number of unlocked launchpads (negative disables)
+            IntegrationCostFormula = "0", //[M]=Vessel loaded mass, [m]=vessel empty mass, [C]=vessel loaded cost, [c]=vessel empty cost, [BP]=vessel BPs, [E]=editor level, [L]=launch site level (pad), [VAB]=1 if VAB craft, 0 if SPH
+            NewLaunchPadCostFormula = "100000*([N]^3)", //[N]=total number of unlocked launchpads (negative disables)
+            RushCostFormula = "[TC]*0.2",
+            AirlaunchCostFormula = "[E]*0.25",
+            AirlaunchTimeFormula = "[BP]*0.25";
     }
 
     public class KCT_Preset_Part_Variables
@@ -425,8 +428,12 @@ namespace KerbalConstructionTime
         public double GetModuleVariable(List<string> moduleNames)
         {
             double value = 1.0;
-            foreach (string name in moduleNames)
+            for (int i = moduleNames.Count - 1; i >= 0; i--)
             {
+                string name = moduleNames[i];
+            
+            //foreach (string name in moduleNames)
+            //{
                 if (Module_Variables.ContainsKey(name))
                     value *= Module_Variables[name];
             }
@@ -436,8 +443,12 @@ namespace KerbalConstructionTime
         public double GetResourceVariable(List<string> resourceNames)
         {
             double value = 1.0;
-            foreach (string name in resourceNames)
+            for (int i = resourceNames.Count - 1; i >= 0; i--)
             {
+                string name = resourceNames[i];
+            
+            //foreach (string name in resourceNames)
+            //{
                 if (Resource_Variables.ContainsKey(name))
                     value *= Resource_Variables[name];
             }
@@ -447,8 +458,11 @@ namespace KerbalConstructionTime
         public double GetGlobalVariable(List<string> moduleNames)
         {
             double value = 1.0;
-            foreach (string name in moduleNames)
+            for (int i = moduleNames.Count - 1; i >= 0; i--)
             {
+                string name = moduleNames[i];
+            //foreach (string name in moduleNames)
+            //{
                 if (Global_Variables.ContainsKey(name))
                     value *= Global_Variables[name];
             }
@@ -493,8 +507,11 @@ namespace KerbalConstructionTime
 
         public void SetGlobalVariables(List<string> variables, List<string> moduleNames)
         {
-            foreach (string name in moduleNames)
+            for (int i = moduleNames.Count - 1; i >= 0; i--)
             {
+                string name = moduleNames[i];
+            //foreach (string name in moduleNames)
+            //{
                 if (Global_Variables.ContainsKey(name))
                     variables.AddUnique(name);
             }

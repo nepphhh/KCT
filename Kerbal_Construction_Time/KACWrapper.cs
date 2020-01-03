@@ -235,9 +235,12 @@ namespace KerbalConstructionTime
                 try
                 {
                     //iterate each "value" in the dictionary
-
-                    foreach (var item in (IList)actualAlarmList)
+                    for (var i = ((IList)actualAlarmList).Count - 1; i >= 0; i--)
                     {
+                        var item = ((IList)actualAlarmList)[i];
+                    
+                    //foreach (var item in (IList)actualAlarmList)
+                    //{
                         KACAlarm r1 = new KACAlarm(item);
                         ListToReturn.Add(r1);
                     }

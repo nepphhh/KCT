@@ -70,8 +70,9 @@ namespace KerbalConstructionTime
     }
     public class KCT_DataStorage : ConfigNodeStorage
     {
-        [Persistent] bool enabledForSave = (HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX
-            || (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX));
+        [Persistent] bool enabledForSave = (HighLogic.CurrentGame.Mode == Game.Modes.CAREER || 
+                                            HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX ||
+                                            HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX);
 
 
 
@@ -90,32 +91,18 @@ namespace KerbalConstructionTime
 
         public override void OnDecodeFromConfigNode()
         {
-            //KCT_GameStates.PartTracker = ListToDict(PartTracker);
-            //KCT_GameStates.PartInventory = ListToDict(PartInventory);
-          /*  KCT_GameStates.ActiveKSC.VABUpgrades = VABUpgrades;
-            KCT_GameStates.ActiveKSC.SPHUpgrades = SPHUpgrades;
-            KCT_GameStates.ActiveKSC.RDUpgrades = RDUpgrades;*/
+
             KCT_GameStates.PurchasedUpgrades = PurchasedUpgrades;
             KCT_GameStates.activeKSCName = activeKSC;
-            //KCT_GameStates.InventorySalesFigures = SalesFigures;
-            //KCT_GameStates.InventorySaleUpgrades = (float)KCT_MathParsing.GetStandardFormulaValue("InventorySales", new Dictionary<string, string> { { "V", "0" }, { "P", SalesFigures.ToString() } });
             KCT_GameStates.UpgradesResetCounter = UpgradesResetCounter;
             KCT_GameStates.TechUpgradesTotal = TechUpgrades;
             KCT_GameStates.SciPointsTotal = SciPoints;
             KCT_GameStates.PermanentModAddedUpgradesButReallyWaitForTheAPI = SavedUpgradePointsPreAPI;
 
-            SetSettings();
-            //KCT_GameStates.firstStart = firstStart;
         }
 
         public override void OnEncodeToConfigNode()
         {
-            //PartTracker = DictToList(KCT_GameStates.PartTracker);
-            //PartInventory = DictToList(KCT_GameStates.PartInventory);
-           // enabledForSave = KCT_GameStates.settings.enabledForSave;
-            /*VABUpgrades = KCT_GameStates.VABUpgrades;
-            SPHUpgrades = KCT_GameStates.SPHUpgrades;
-            RDUpgrades = KCT_GameStates.RDUpgrades;*/
             TechUpgrades = KCT_GameStates.TechUpgradesTotal;
             PurchasedUpgrades = KCT_GameStates.PurchasedUpgrades;
             SciPoints = KCT_GameStates.SciPointsTotal;
@@ -124,34 +111,17 @@ namespace KerbalConstructionTime
             SalesFigures = KCT_GameStates.InventorySalesFigures;
             UpgradesResetCounter = KCT_GameStates.UpgradesResetCounter;
             SavedUpgradePointsPreAPI = KCT_GameStates.PermanentModAddedUpgradesButReallyWaitForTheAPI;
-
-            GetSettings();
         }
 
-        private void SetSettings()
-        {
-            //KCT_GameStates.settings.enabledForSave = enabledForSave;
-            /*KCT_GameStates.settings.RecoveryModifier = RecoveryModifier;
-            KCT_GameStates.settings.DisableBuildTime = DisableBuildTime;
-            KCT_GameStates.settings.InstantTechUnlock = InstantTechUnlock;
-            KCT_GameStates.settings.EnableAllBodies = EnableAllBodies;
-            KCT_GameStates.settings.Reconditioning = Reconditioning;*/
-        }
-
-        private void GetSettings()
-        {
-           // enabledForSave = KCT_GameStates.settings.enabledForSave;
-            /*RecoveryModifier = KCT_GameStates.settings.RecoveryModifier;
-            DisableBuildTime = KCT_GameStates.settings.DisableBuildTime;
-            InstantTechUnlock = KCT_GameStates.settings.InstantTechUnlock;
-            EnableAllBodies = KCT_GameStates.settings.EnableAllBodies;
-            Reconditioning = KCT_GameStates.settings.Reconditioning;*/
-        }
 
         private bool VesselIsInWorld(Guid id)
         {
-            foreach (Vessel vssl in FlightGlobals.Vessels)
+            for (int i = FlightGlobals.Vessels.Count - 1; i >= 0; i--)
             {
+                Vessel vssl = FlightGlobals.Vessels[i];
+            
+            //foreach (Vessel vssl in FlightGlobals.Vessels)
+            //{
                 if (vssl.id == id)
                     return true;
             }

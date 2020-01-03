@@ -3,8 +3,7 @@
  // the next time this code is regenerated.
  // 
   
- #if KSP1_4
+
  using System.Reflection;
 
- [assembly: AssemblyFileVersion("1.4.5.6")]
- #endif
+ [assembly: AssemblyVersion("1.4.7.5")]

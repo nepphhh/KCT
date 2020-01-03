@@ -13,7 +13,7 @@ namespace KerbalConstructionTime
         public double progress;
         public ProtoTechNode protoNode;
         public List<string> UnlockedParts;
-       // public double BuildRate { get { return (Math.Pow(2, KCT_GameStates.TechUpgradesTotal + 1) / (86400.0 * KCT_GameStates.timeSettings.NodeModifier)); } } //0pts=1day/2sci, 1pt=1/4, 2=1/8, 3=1/16, 4=1/32...n=1/2^(n+1)
+        // public double BuildRate { get { return (Math.Pow(2, KCT_GameStates.TechUpgradesTotal + 1) / (86400.0 * KCT_GameStates.timeSettings.NodeModifier)); } } //0pts=1day/2sci, 1pt=1/4, 2=1/8, 3=1/16, 4=1/32...n=1/2^(n+1)
         private double bRate_int = -1;
         public double BuildRate
         {
@@ -60,7 +60,7 @@ namespace KerbalConstructionTime
             //KCTDebug.Log("BuildRate = " + BuildRate);
             KCTDebug.Log("TimeLeft = " + TimeLeft);
         }
-        
+
         public KCT_TechItem(string ID, string name, double prog, int sci, List<string> parts)
         {
             techID = ID;
@@ -100,12 +100,6 @@ namespace KerbalConstructionTime
         public bool isInList()
         {
             return KCT_GameStates.TechList.FirstOrDefault(t => t.techID == this.techID) != null;
-           /* foreach (KCT_TechItem tech in KCT_GameStates.TechList)
-            {
-                if (tech.techID == this.techID)
-                    return true;
-            }
-            return false;*/
         }
 
         string IKCTBuildItem.GetItemName()
@@ -131,6 +125,45 @@ namespace KerbalConstructionTime
         bool IKCTBuildItem.IsComplete()
         {
             return (this.isComplete);
+        }
+
+        public void IncrementProgress(double UTDiff)
+        {
+            // Don't progress blocked items
+            if (GetBlockingTech(KCT_GameStates.TechList) != null)
+                return;
+
+            progress += BuildRate * UTDiff;
+            if (isComplete || !KCT_PresetManager.Instance.ActivePreset.generalSettings.TechUnlockTimes)
+            {
+                if (KCT_GameStates.settings.ForceStopWarp && TimeWarp.CurrentRate > 1f)
+                    TimeWarp.SetRate(0, true);
+                if (protoNode == null) return;
+                EnableTech();
+                KCT_GameStates.TechList.Remove(this);
+                if (KCT_PresetManager.PresetLoaded() && KCT_PresetManager.Instance.ActivePreset.generalSettings.TechUpgrades)
+                    KCT_GameStates.MiscellaneousTempUpgrades++;
+
+                for (int j = 0; j < KCT_GameStates.TechList.Count; j++)
+                    KCT_GameStates.TechList[j].UpdateBuildRate(j);
+            }
+        }
+
+        public string GetBlockingTech(KCT_GameStates.KCT_TechItemIlist<KCT_TechItem> techList)
+        {
+            string blockingTech = null;
+            List<string> parentList = KerbalConstructionTimeData.techNameToParents[techID];
+
+            foreach (var t in techList)
+            {
+                if (parentList != null && parentList.Contains(t.techID))
+                {
+                    blockingTech = t.techName;
+                    break;
+                }
+            }
+
+            return blockingTech;
         }
 
     }

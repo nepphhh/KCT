@@ -68,10 +68,7 @@ namespace KerbalConstructionTime
                             up.commonName = newName;
                         }
                     }
-                    /*foreach (KCT_BuildListVessel blv in ksc.VABWarehouse)
-                    {
-                        if (blv.la)
-                    }*/ //I think also done by index and not by name
+
                     break;
                 }
             }
@@ -111,9 +108,6 @@ namespace KerbalConstructionTime
         {
             foreach (DestructibleBuilding facility in GetDestructibleFacilityReferences())
             {
-                /*ConfigNode aNode = new ConfigNode();
-                facility.Save(aNode);
-                aNode.SetValue("intact", (!destroyed).ToString());*/
                 ConfigNode aNode = DestructionNode.GetNode(facility.id);
                 if (aNode != null)
                     facility.Load(aNode);
