@@ -175,7 +175,7 @@ namespace KerbalConstructionTime
             //LaunchPads[ActiveLaunchPadID].level = KCT_Utilities.BuildingUpgradeLevel(SpaceCenterFacility.LaunchPad);
             //LaunchPads[ActiveLaunchPadID].destroyed = !KCT_Utilities.LaunchFacilityIntact(KCT_BuildListVessel.ListType.VAB); //Might want to remove this as well
             if (updateDestrNode)
-                ActiveLPInstance.RefreshDestructionNode();
+                ActiveLPInstance?.RefreshDestructionNode();
 
             LaunchPads[LP_ID].SetActive();
         }
