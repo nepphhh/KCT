@@ -44,6 +44,42 @@ namespace KerbalConstructionTime
             upgradeRepair = true;
         }
 
+        public bool Delete(out string failReason)
+        {
+            bool found = false;
+            foreach (KCT_KSC ksc in KCT_GameStates.KSCs)
+            {
+                int idx = KCT_GameStates.ActiveKSC.LaunchPads.IndexOf(this);
+                if (idx < 0) continue;
+
+                var rr = ksc.Recon_Rollout.FirstOrDefault(r => r.launchPadID == name);
+                if (rr != null)
+                {
+                    failReason = rr.IsComplete() ? "a vessel is currently on the pad" : "pad has ongoing rollout or reconditioning";
+                    return false;
+                }
+
+                foreach (KCT_BuildListVessel vessel in ksc.VABWarehouse)
+                {
+                    if (vessel.launchSiteID > idx) vessel.launchSiteID--;
+                }
+                foreach (KCT_BuildListVessel vessel in ksc.VABList)
+                {
+                    if (vessel.launchSiteID > idx) vessel.launchSiteID--;
+                }
+
+                ksc.LaunchPads.RemoveAt(idx);
+
+                if (ksc == KCT_GameStates.ActiveKSC)
+                {
+                    ksc.SwitchLaunchPad(0);
+                }
+            }
+
+            failReason = null;
+            return !found;
+        }
+
         public void Rename(string newName)
         {
             //find everything that references this launchpad by name and update the name reference

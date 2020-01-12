@@ -668,6 +668,7 @@ namespace KerbalConstructionTime
                 {
                     renamingLaunchPad = true;
                     newName = KCT_GameStates.ActiveKSC.ActiveLPInstance.name;
+                    showDismantlePad = false;
                     showNewPad = false;
                     showRename = true;
                     showBuildList = false;
@@ -676,7 +677,16 @@ namespace KerbalConstructionTime
                 if (costOfNewLP >= 0 && GUILayout.Button("New", GUILayout.ExpandWidth(false)))
                 {
                     newName = "LaunchPad " + (KCT_GameStates.ActiveKSC.LaunchPads.Count + 1);
+                    showDismantlePad = false;
                     showNewPad = true;
+                    showRename = false;
+                    showBuildList = false;
+                    showBLPlus = false;
+                }
+                if (lpCount > 1 && GUILayout.Button("Dismantle", GUILayout.ExpandWidth(false)))
+                {
+                    showDismantlePad = true;
+                    showNewPad = false;
                     showRename = false;
                     showBuildList = false;
                     showBLPlus = false;
