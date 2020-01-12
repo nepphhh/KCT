@@ -254,6 +254,16 @@ namespace KerbalConstructionTime
                 GUILayout.Label("RushCost: ");
                 WorkingPreset.formulaSettings.RushCostFormula = GUILayout.TextField(WorkingPreset.formulaSettings.RushCostFormula, GUILayout.Width(textWidth));
                 GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("AirlaunchCost: ");
+                WorkingPreset.formulaSettings.AirlaunchCostFormula = GUILayout.TextField(WorkingPreset.formulaSettings.AirlaunchCostFormula, GUILayout.Width(textWidth));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("AirlaunchTime: ");
+                WorkingPreset.formulaSettings.AirlaunchTimeFormula = GUILayout.TextField(WorkingPreset.formulaSettings.AirlaunchTimeFormula, GUILayout.Width(textWidth));
+                GUILayout.EndHorizontal();
             }
 
             GUILayout.EndVertical(); 

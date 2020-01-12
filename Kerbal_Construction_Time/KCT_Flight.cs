@@ -57,23 +57,33 @@ namespace KerbalConstructionTime
             bool vab = KCT_Utilities.IsVabRecoveryAvailable();
 
             int cnt = 2;
-            if (sph) cnt++;
-            if (vab) cnt++;
-
+            if (!FlightGlobals.ActiveVessel.isEVA)
+            {
+                if (sph) cnt++;
+                if (vab) cnt++;
+            }
             DialogGUIBase[] options = new DialogGUIBase[cnt];
             cnt = 0;
-            if (sph)
+            if (!FlightGlobals.ActiveVessel.isEVA)
             {
-                options[cnt++] = new DialogGUIButton("Recover to SPH", RecoverToSPH);
-            }
-            if (vab)
-            {
-                options[cnt++] = new DialogGUIButton("Recover to VAB", RecoverToVAB);
-            }
-            options[cnt++] = new DialogGUIButton("Normal recovery", DoNormalRecovery);
+                if (sph)
+                {
+                    options[cnt++] = new DialogGUIButton("Recover to SPH", RecoverToSPH);
+                }
+                if (vab)
+                {
+                    options[cnt++] = new DialogGUIButton("Recover to VAB", RecoverToVAB);
+                }
+                options[cnt++] = new DialogGUIButton("Normal recovery", DoNormalRecovery);
+            } 
+            else
+                options[cnt++] = new DialogGUIButton("Recover", DoNormalRecovery);
             options[cnt] = new DialogGUIButton("Cancel", Cancel);
 
-            MultiOptionDialog diag = new MultiOptionDialog("scrapVesselPopup", "Do you want KCT to do the recovery?", "Kerbal Construction Time (KCT)", null, options: options);
+            MultiOptionDialog diag = new MultiOptionDialog("scrapVesselPopup", 
+                "Do you want KCT to do the recovery?", 
+                "Kerbal Construction Time (KCT)", 
+                null, options: options);
             PopupDialog.SpawnPopupDialog(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), diag, false, HighLogic.UISkin);
         }
     }

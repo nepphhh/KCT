@@ -5,6 +5,8 @@ namespace KerbalConstructionTime
     public class KCT_UpgradingBuilding : IKCTBuildItem
     {
         [Persistent]
+        public SpaceCenterFacility facilityType;
+        [Persistent]
         public int upgradeLevel, currentLevel, launchpadID = 0;
         [Persistent]
         public string id, commonName;
@@ -20,8 +22,9 @@ namespace KerbalConstructionTime
 
         }
 
-        public KCT_UpgradingBuilding(string facilityID, int newLevel, int oldLevel, string name)
+        public KCT_UpgradingBuilding(SpaceCenterFacility type, string facilityID, int newLevel, int oldLevel, string name)
         {
+            facilityType = type;
             id = facilityID;
             upgradeLevel = newLevel;
             currentLevel = oldLevel;
@@ -83,7 +86,7 @@ namespace KerbalConstructionTime
 
         public void SetBP(double cost)
         {
-            BP = CalculateBP(cost);
+            BP = CalculateBP(cost, facilityType);
         }
 
         public bool AlreadyInProgress()
@@ -145,18 +148,65 @@ namespace KerbalConstructionTime
                     Upgrade();
             }
         }
-
-        public static double CalculateBP(double cost)
+        public static double CalculateBP(double cost, SpaceCenterFacility facilityType)
         {
-            double bp = KCT_MathParsing.GetStandardFormulaValue("KSCUpgrade", new Dictionary<string, string>() { { "C", cost.ToString() }, { "O", KCT_PresetManager.Instance.ActivePreset.timeSettings.OverallMultiplier.ToString() } });
+            int isAdm = 0, isAC = 0, isLP = 0, isMC = 0, isRD = 0, isRW = 0, isTS = 0, isSPH = 0, isVAB = 0;
+            switch (facilityType)
+            {
+                case SpaceCenterFacility.Administration:
+                    isAdm = 1;
+                    break;
+                case SpaceCenterFacility.AstronautComplex:
+                    isAC = 1;
+                    break;
+                case SpaceCenterFacility.LaunchPad:
+                    isLP = 1;
+                    break;
+                case SpaceCenterFacility.MissionControl:
+                    isMC = 1;
+                    break;
+                case SpaceCenterFacility.ResearchAndDevelopment:
+                    isRD = 1;
+                    break;
+                case SpaceCenterFacility.Runway:
+                    isRW = 1;
+                    break;
+                case SpaceCenterFacility.TrackingStation:
+                    isTS = 1;
+                    break;
+                case SpaceCenterFacility.SpaceplaneHangar:
+                    isSPH = 1;
+                    break;
+                case SpaceCenterFacility.VehicleAssemblyBuilding:
+                    isVAB = 1;
+                    break;
+                default:
+                    break;
+            }
+            var variables = new Dictionary<string, string>()
+            {
+                { "C", cost.ToString() },
+                { "O", KCT_PresetManager.Instance.ActivePreset.timeSettings.OverallMultiplier.ToString() },
+                { "Adm", isAdm.ToString() },
+                { "AC", isAC.ToString() },
+                { "LP", isLP.ToString() },
+                { "MC", isMC.ToString() },
+                { "RD", isRD.ToString() },
+                { "RW", isRW.ToString() },
+                { "TS", isTS.ToString() },
+                { "SPH", isSPH.ToString() },
+                { "VAB", isVAB.ToString() }
+            };
+
+            double bp = KCT_MathParsing.GetStandardFormulaValue("KSCUpgrade", variables);
             if (bp <= 0) { bp = 1; }
 
             return bp;
         }
 
-        public static double CalculateBuildTime(double cost, KCT_KSC KSC = null)
+        public static double CalculateBuildTime(double cost, SpaceCenterFacility facilityType, KCT_KSC KSC = null)
         {
-            double bp = CalculateBP(cost);
+            double bp = CalculateBP(cost, facilityType);
             double rateTotal = KCT_Utilities.GetBothBuildRateSum(KSC ?? KCT_GameStates.ActiveKSC);
 
             return bp / rateTotal;

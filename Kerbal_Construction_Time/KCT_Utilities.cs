@@ -277,17 +277,26 @@ namespace KerbalConstructionTime
 
         public static double GetBuildRate(int index, KCT_BuildListVessel.ListType type, KCT_KSC KSC, bool UpgradedRate = false)
         {
+            return GetBuildRate(index, type, KSC, UpgradedRate ? 1 : 0);
+        }
+
+        public static double GetBuildRate(int index, KCT_BuildListVessel.ListType type, KCT_KSC KSC, int upgradeDelta)
+        {
             if (KSC == null) KSC = KCT_GameStates.ActiveKSC;
             double ret = 0;
             if (type == KCT_BuildListVessel.ListType.VAB)
             {
-                if (!UpgradedRate && KSC.VABRates.Count > index)
+                if (upgradeDelta == 0 && KSC.VABRates.Count > index)
                 {
                     return KSC.VABRates[index];
                 }
-                else if (UpgradedRate && KSC.UpVABRates.Count > index)
+                else if (upgradeDelta == 1 && KSC.UpVABRates.Count > index)
                 {
                     return KSC.UpVABRates[index];
+                }
+                else if (upgradeDelta > 1)
+                {
+                    return KCT_MathParsing.ParseBuildRateFormula(KCT_BuildListVessel.ListType.VAB, index, KSC, upgradeDelta);
                 }
                 else
                 {
@@ -296,13 +305,17 @@ namespace KerbalConstructionTime
             }
             else if (type == KCT_BuildListVessel.ListType.SPH)
             {
-                if (!UpgradedRate && KSC.SPHRates.Count > index)
+                if (upgradeDelta == 0 && KSC.SPHRates.Count > index)
                 {
                     return KSC.SPHRates[index];
                 }
-                else if (UpgradedRate && KSC.UpSPHRates.Count > index)
+                else if (upgradeDelta == 1 && KSC.UpSPHRates.Count > index)
                 {
                     return KSC.UpSPHRates[index];
+                }
+                else if (upgradeDelta > 1)
+                {
+                    return KCT_MathParsing.ParseBuildRateFormula(KCT_BuildListVessel.ListType.SPH, index, KSC, upgradeDelta);
                 }
                 else
                 {

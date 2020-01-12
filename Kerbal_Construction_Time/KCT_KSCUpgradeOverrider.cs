@@ -128,6 +128,7 @@ namespace KerbalConstructionTime
             KCTDebug.Log($"Upgrading from level {oldLevel}");
 
             string facilityID = GetFacilityID();
+            SpaceCenterFacility facilityType = GetFacilityType();
 
             string gate = GetTechGate(facilityID, oldLevel + 1);
             KCTDebug.Log("[KCTT] Gate for " + facilityID + "? " + gate);
@@ -147,7 +148,7 @@ namespace KerbalConstructionTime
                 }
             }
 
-            KCT_UpgradingBuilding upgrading = new KCT_UpgradingBuilding(facilityID, oldLevel + 1, oldLevel, facilityID.Split('/').Last());
+            KCT_UpgradingBuilding upgrading = new KCT_UpgradingBuilding(facilityType, facilityID, oldLevel + 1, oldLevel, facilityID.Split('/').Last());
 
             upgrading.isLaunchpad = facilityID.ToLower().Contains("launchpad");
             if (upgrading.isLaunchpad)
@@ -205,10 +206,25 @@ namespace KerbalConstructionTime
             _menu.Dismiss(KSCFacilityContextMenu.DismissAction.None);
         }
 
-
         public string GetFacilityID()
         {
             return getMember<SpaceCenterBuilding>("host").Facility.id;
+        }
+
+        public SpaceCenterFacility GetFacilityType()
+        {
+            var scb = getMember<SpaceCenterBuilding>("host");
+            if (scb is AdministrationFacility) return SpaceCenterFacility.Administration;
+            if (scb is AstronautComplexFacility) return SpaceCenterFacility.AstronautComplex;
+            if (scb is LaunchSiteFacility && ((LaunchSiteFacility)scb).facilityType == EditorFacility.VAB) return SpaceCenterFacility.LaunchPad;
+            if (scb is LaunchSiteFacility && ((LaunchSiteFacility)scb).facilityType == EditorFacility.SPH) return SpaceCenterFacility.Runway;
+            if (scb is MissionControlBuilding) return SpaceCenterFacility.MissionControl;
+            if (scb is RnDBuilding) return SpaceCenterFacility.ResearchAndDevelopment;
+            if (scb is SpacePlaneHangarBuilding) return SpaceCenterFacility.SpaceplaneHangar;
+            if (scb is TrackingStationBuilding) return SpaceCenterFacility.TrackingStation;
+            if (scb is VehicleAssemblyBuilding) return SpaceCenterFacility.VehicleAssemblyBuilding;
+
+            throw new Exception($"Invalid facility type {scb.GetType().Name}");
         }
     }
 }

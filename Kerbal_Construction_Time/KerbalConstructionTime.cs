@@ -417,10 +417,12 @@ namespace KerbalConstructionTime
                     KCT_AirlaunchPrep alPrep = KCT_GameStates.ActiveKSC.AirlaunchPrep.FirstOrDefault(r => r.associatedID == KCT_GameStates.launchedVessel.id.ToString());
                     if (alPrep != null)
                         KCT_GameStates.ActiveKSC.AirlaunchPrep.Remove(alPrep);
-
-                    if (KCT_GameStates.AirlaunchParams != null && KCT_GameStates.AirlaunchParams.VesselId == KCT_GameStates.launchedVessel.id)
+                    AirlaunchParams alParams = KCT_GameStates.AirlaunchParams;
+                    if (alParams != null && alParams.KCTVesselId == KCT_GameStates.launchedVessel.id &&
+                        (!alParams.KSPVesselId.HasValue || alParams.KSPVesselId == FlightGlobals.ActiveVessel.id))
                     {
-                        StartCoroutine(AirlaunchRoutine(KCT_GameStates.AirlaunchParams, FlightGlobals.ActiveVessel.id));
+                        if (!alParams.KSPVesselId.HasValue) alParams.KSPVesselId = FlightGlobals.ActiveVessel.id;
+                        StartCoroutine(AirlaunchRoutine(alParams, FlightGlobals.ActiveVessel.id));
                     }
                 }
             }

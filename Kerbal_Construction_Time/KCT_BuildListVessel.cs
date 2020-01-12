@@ -604,6 +604,7 @@ namespace KerbalConstructionTime
             shipNode.Save(tempFile);
             FlightDriver.StartWithNewLaunch(tempFile, flag, launchSite, new VesselCrewManifest());
             KCT_GameStates.LaunchFromTS = false;
+            if (KCT_GameStates.AirlaunchParams != null) KCT_GameStates.AirlaunchParams.KSPVesselId = null;
         }
 
         public List<string> MeetsFacilityRequirements(bool highestFacility = true)

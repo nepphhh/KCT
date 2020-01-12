@@ -39,7 +39,7 @@ namespace KerbalConstructionTime
         public static Rect buildListWindowPosition = new Rect(Screen.width - 400, 40, 400, 1);
         private static Rect crewListWindowPosition = new Rect((Screen.width - 400) / 2, (Screen.height / 4), 400, 1);
         private static Rect settingsPosition = new Rect((3 * Screen.width / 8), (Screen.height / 4), 300, 1);
-        private static Rect upgradePosition = new Rect((Screen.width - 260) / 2, (Screen.height / 4), 260, 1);
+        private static Rect upgradePosition = new Rect((Screen.width - 450) / 2, (Screen.height / 4), 450, 1);
         private static Rect bLPlusPosition = new Rect(Screen.width - 500, 40, 100, 1);
 
         static Rect buildPlansWindowPosition = new Rect(Screen.width - 300, 40, 300, 1);
@@ -1541,15 +1541,149 @@ namespace KerbalConstructionTime
         public static double sciCost = -13, fundsCost = -13;
         public static double nodeRate = -13, upNodeRate = -13;
         public static double researchRate = -13, upResearchRate = -13;
+        private static int availablePoints;
+        private static int buyModifier = 1;
+        private static int sciDelta = 1, fundsDelta = 1;
+        private static int researchDelta = 1, nodeDelta = 1;
+        private static GUIStyle cannotAffordStyle;
+
+        private static GUIStyle GetCannotAffordStyle()
+        {
+            if (cannotAffordStyle == null)
+            {
+                cannotAffordStyle = new GUIStyle(GUI.skin.button);
+                cannotAffordStyle.normal.textColor = Color.red;
+                cannotAffordStyle.active.textColor = cannotAffordStyle.normal.textColor;
+                cannotAffordStyle.hover.textColor = cannotAffordStyle.normal.textColor;
+            }
+            return cannotAffordStyle;
+        }
+        
+        private static double CalcPointCost(ref int pointDelta, double maxCost, string formulaName, int gameStateIndex)
+        {
+            int purchasedUpgrades = KCT_GameStates.PurchasedUpgrades[gameStateIndex];
+            var variables = new Dictionary<string, string>();
+            variables.Add("N", purchasedUpgrades.ToString());
+            double cumulativeCost = 0;
+            double nextCost = KCT_MathParsing.GetStandardFormulaValue(formulaName, variables);
+
+            if (nextCost < 0)
+            {
+                return -1;
+            }
+
+            if (pointDelta < 0)
+            {
+                pointDelta = 0;
+                do
+                {
+                    pointDelta++;
+                    cumulativeCost += nextCost;
+                    variables["N"] = (purchasedUpgrades + pointDelta).ToString();
+                    nextCost = KCT_MathParsing.GetStandardFormulaValue(formulaName, variables);
+                }
+                while (cumulativeCost + nextCost <= maxCost);
+            }
+            else
+            {
+                for (int i = 0; i < pointDelta; i++)
+                {
+                    variables["N"] = (purchasedUpgrades + i).ToString();
+                    cumulativeCost += KCT_MathParsing.GetStandardFormulaValue(formulaName, variables);
+                }
+            }
+            return cumulativeCost;
+        }
+
+        private static void DrawRateSection(KCT_BuildListVessel.ListType type, KCT_KSC KSC, List<int> upgrades, List<double> rates)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(type.ToString() + " Upgrades");
+            GUILayout.Label("+" + ((buyModifier < 0) ? "MAX" : buyModifier.ToString()) + " Point" + (buyModifier == 1 ? "" : "s"), GUILayout.ExpandWidth(false));
+            GUILayout.EndHorizontal();
+            scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height((upgrades.Count + 1) * 26 + 5), GUILayout.MaxHeight(1 * Screen.height / 4));
+            GUILayout.BeginVertical();
+            for (int i = 0; i < rates.Count; i++)
+            {
+                int pointsDelta = buyModifier;
+                if (pointsDelta < 0)
+                {
+                    if (i == 0) pointsDelta = availablePoints;
+                    else if (i > rates.Count) pointsDelta = 0;
+                    else
+                    {
+                        pointsDelta = 1;
+                        while (pointsDelta < availablePoints && KCT_Utilities.GetBuildRate(i, type, KSC, pointsDelta + 1) <= rates[i - 1])
+                        {
+                            pointsDelta++;
+                        }
+                    }
+                }
+                double rate = KCT_Utilities.GetBuildRate(i, type, KSC);
+                double upgraded = KCT_Utilities.GetBuildRate(i, type, KSC, true);
+                double deltaUpgraded = KCT_Utilities.GetBuildRate(i, type, KSC, pointsDelta);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Rate " + (i + 1));
+                GUILayout.Label(rate + " BP/s");
+                if (availablePoints > 0 && (i == 0 || upgraded <= KCT_Utilities.GetBuildRate(i - 1, type, KSC)) && upgraded - rate > 0)
+                {
+                    bool canAfford = (availablePoints >= pointsDelta) && (i == 0 || deltaUpgraded <= KCT_Utilities.GetBuildRate(i - 1, type, KSC));
+                    var style = canAfford ? GUI.skin.button : GetCannotAffordStyle();
+                    if (GUILayout.Button("+" + Math.Round(deltaUpgraded - rate, 3), style, GUILayout.Width(55)) && canAfford)
+                    {
+                        if (i >= upgrades.Count)
+                            upgrades.Add(pointsDelta);
+                        else
+                            upgrades[i] += pointsDelta;
+
+                        KSC.RecalculateBuildRates();
+                        KSC.RecalculateUpgradedBuildRates();
+                    }
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.EndVertical();
+            GUILayout.EndScrollView();
+        }
+
         private static void DrawUpgradeWindow(int windowID)
         {
             int spentPoints = KCT_Utilities.TotalSpentUpgrades();
+            int upgrades = KCT_Utilities.TotalUpgradePoints();
+
+            bool cacheInvalid = false;
+            
+            if(availablePoints != upgrades - spentPoints)
+            {
+                cacheInvalid = true;
+                availablePoints = upgrades - spentPoints;
+            }
+
+            int oldByModifier = buyModifier;
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            {
+                buyModifier = 5;
+            }
+            else if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+            {
+                buyModifier = 100;
+            }
+            else if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
+            {
+                buyModifier = -1;
+            }
+            else
+            {
+                buyModifier = 1;
+            }
+            cacheInvalid |= buyModifier != oldByModifier;
+
             GUILayout.BeginVertical();
             GUILayout.BeginHorizontal();
-            int upgrades = KCT_Utilities.TotalUpgradePoints();
             GUILayout.Label("Total Points:", GUILayout.Width(90));
             GUILayout.Label(upgrades.ToString());
-            GUILayout.Label("Available: " + (upgrades - spentPoints));
+            GUILayout.Label("Available: " + availablePoints);
             //  if (KCT_Utilities.RSSActive)
             //     GUILayout.Label("Minimum Available: ");
             GUILayout.EndHorizontal();
@@ -1580,33 +1714,23 @@ namespace KerbalConstructionTime
 
             if (KCT_Utilities.CurrentGameHasScience())
             {
-                //int cost = (int)Math.Min(Math.Pow(2, KCT_GameStates.PurchasedUpgrades[0]+2), 512);
-                if (sciCost == -13)
+                if (sciCost == -13 || cacheInvalid)
                 {
-                    sciCost = KCT_MathParsing.GetStandardFormulaValue("UpgradeScience", new Dictionary<string, string>() { { "N", KCT_GameStates.PurchasedUpgrades[0].ToString() } });
-                    //   double max = double.Parse(KCT_GameStates.formulaSettings.UpgradeScienceMax);
-                    //   if (max > 0 && sciCost > max) sciCost = max;
+                    sciDelta = buyModifier;
+                    sciCost = CalcPointCost(ref sciDelta, ResearchAndDevelopment.Instance.Science, "UpgradeScience", 0);
                 }
-                double cost = sciCost;
-                if (cost >= 0)
+                if (sciCost >= 0)
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label("Buy Point: ");
-                    if (GUILayout.Button(Math.Round(cost, 0) + " Sci", GUILayout.ExpandWidth(false)))
+                    GUILayout.Label((sciDelta > 1) ? "Buy " + sciDelta + " Points: " : "Buy 1 Point: ");
+                    bool canAfford = ResearchAndDevelopment.Instance.Science >= sciCost;
+                    var style = canAfford ? GUI.skin.button : GetCannotAffordStyle();
+                    if (GUILayout.Button(Math.Round(sciCost, 0) + " Sci", style, GUILayout.ExpandWidth(false)) && canAfford)
                     {
-                        sciCost = KCT_MathParsing.GetStandardFormulaValue("UpgradeScience", new Dictionary<string, string>() { { "N", KCT_GameStates.PurchasedUpgrades[0].ToString() } });
-                        //double max = double.Parse(KCT_GameStates.formulaSettings.UpgradeScienceMax);
-                        //if (max > 0 && sciCost > max) sciCost = max;
-                        cost = sciCost;
+                        ResearchAndDevelopment.Instance.AddScience(-(float)sciCost, TransactionReasons.None);
+                        KCT_GameStates.PurchasedUpgrades[0] += sciDelta;
 
-                        if (ResearchAndDevelopment.Instance.Science >= cost)
-                        {
-                            //ResearchAndDevelopment.Instance.Science -= cost;
-                            ResearchAndDevelopment.Instance.AddScience(-(float)cost, TransactionReasons.None);
-                            ++KCT_GameStates.PurchasedUpgrades[0];
-
-                            sciCost = -13;
-                        }
+                        sciCost = -13;
                     }
                     GUILayout.EndHorizontal();
                 }
@@ -1614,37 +1738,29 @@ namespace KerbalConstructionTime
 
             if (KCT_Utilities.CurrentGameIsCareer())
             {
-                //double cost = Math.Min(Math.Pow(2, KCT_GameStates.PurchasedUpgrades[1]+4), 1024) * 1000;
-                if (fundsCost == -13)
+                if (fundsCost == -13 || cacheInvalid)
                 {
-                    fundsCost = KCT_MathParsing.GetStandardFormulaValue("UpgradeFunds", new Dictionary<string, string>() { { "N", KCT_GameStates.PurchasedUpgrades[1].ToString() } });
-                    // double max = double.Parse(KCT_GameStates.formulaSettings.UpgradeFundsMax);
-                    // if (max > 0 && fundsCost > max) fundsCost = max;
+                    fundsDelta = buyModifier;
+                    fundsCost = CalcPointCost(ref fundsDelta, Funding.Instance.Funds, "UpgradeFunds", 1);
                 }
-                double cost = fundsCost;
-                if (cost >= 0)
+                if (fundsCost >= 0)
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label("Buy Point: ");
-                    if (GUILayout.Button(Math.Round(cost, 0) + " Funds", GUILayout.ExpandWidth(false)))
+                    GUILayout.Label((fundsDelta > 1) ? "Buy " + fundsDelta + " Points: " : "Buy 1 Point: ");
+                    bool canAfford = Funding.Instance.Funds >= fundsCost;
+                    var style = canAfford ? GUI.skin.button : GetCannotAffordStyle();
+                    if (GUILayout.Button(Math.Round(fundsCost, 0) + " Funds", style, GUILayout.ExpandWidth(false)) && canAfford)
                     {
-                        fundsCost = KCT_MathParsing.GetStandardFormulaValue("UpgradeFunds", new Dictionary<string, string>() { { "N", KCT_GameStates.PurchasedUpgrades[1].ToString() } });
-                        //   double max = int.Parse(KCT_GameStates.formulaSettings.UpgradeFundsMax);
-                        //  if (max > 0 && fundsCost > max) fundsCost = max;
-                        cost = fundsCost;
+                        KCT_Utilities.SpendFunds(fundsCost, TransactionReasons.None);
+                        KCT_GameStates.PurchasedUpgrades[1] += fundsDelta;
 
-                        if (Funding.Instance.Funds >= cost)
-                        {
-                            KCT_Utilities.SpendFunds(cost, TransactionReasons.None);
-                            ++KCT_GameStates.PurchasedUpgrades[1];
-
-
-                            fundsCost = -13;
-                        }
+                        fundsCost = -13;
                     }
                     GUILayout.EndHorizontal();
                 }
             }
+
+            int availablePoints = upgrades - spentPoints;
 
             //TODO: Calculate the cost of resetting
             int ResetCost = (int)KCT_MathParsing.GetStandardFormulaValue("UpgradeReset", new Dictionary<string, string> { { "N", KCT_GameStates.UpgradesResetCounter.ToString() } });
@@ -1652,9 +1768,12 @@ namespace KerbalConstructionTime
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Reset Upgrades: ");
-                if (GUILayout.Button(ResetCost + " Points", GUILayout.ExpandWidth(false)))
+
+                bool canAfford = (availablePoints >= ResetCost);
+                var style = canAfford ? GUI.skin.button : GetCannotAffordStyle();
+                if (GUILayout.Button(ResetCost + " Points", style, GUILayout.ExpandWidth(false)))
                 {
-                    if (spentPoints > 0 && (upgrades - spentPoints >= ResetCost)) //you have to spend some points before resetting does anything
+                    if (spentPoints > 0 && canAfford) //you have to spend some points before resetting does anything
                     {
                         KCT_GameStates.ActiveKSC.VABUpgrades = new List<int>() { 0 };
                         KCT_GameStates.ActiveKSC.SPHUpgrades = new List<int>() { 0 };
@@ -1678,6 +1797,7 @@ namespace KerbalConstructionTime
                         KCT_GameStates.UpgradesResetCounter++;
                     }
                 }
+                GUI.enabled = true;
                 GUILayout.EndHorizontal();
             }
 
@@ -1690,84 +1810,30 @@ namespace KerbalConstructionTime
 
             if (upgradeWindowHolder == 0) //VAB
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("VAB Upgrades");
-                GUILayout.EndHorizontal();
-                scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height((KSC.VABUpgrades.Count + 1) * 26 + 5), GUILayout.MaxHeight(1 * Screen.height / 4));
-                GUILayout.BeginVertical();
-                for (int i = 0; i < KSC.VABRates.Count; i++)
-                {
-                    double rate = KCT_Utilities.GetBuildRate(i, KCT_BuildListVessel.ListType.VAB, KSC);
-                    double upgraded = KCT_Utilities.GetBuildRate(i, KCT_BuildListVessel.ListType.VAB, KSC, true);
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label("Rate " + (i + 1));
-                    GUILayout.Label(rate + " BP/s");
-                    if (upgrades - spentPoints > 0 && (i == 0 || upgraded <= KCT_Utilities.GetBuildRate(i - 1, KCT_BuildListVessel.ListType.VAB, KSC)) && upgraded - rate > 0)
-                    {
-                        if (GUILayout.Button("+" + Math.Round(upgraded - rate, 3), GUILayout.Width(55)))
-                        {
-                            if (i < KSC.VABUpgrades.Count)
-                                ++KSC.VABUpgrades[i];
-                            else
-                                KSC.VABUpgrades.Add(1);
-                            KSC.RecalculateBuildRates();
-                            KSC.RecalculateUpgradedBuildRates();
-                        }
-                    }
-                    GUILayout.EndHorizontal();
-                }
-
-                GUILayout.EndVertical();
-                GUILayout.EndScrollView();
+                DrawRateSection(KCT_BuildListVessel.ListType.VAB, KSC, KSC.VABUpgrades, KSC.VABRates);
             }
 
             if (upgradeWindowHolder == 1) //SPH
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("SPH Upgrades");
-                GUILayout.EndHorizontal();
-                scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height((KSC.SPHUpgrades.Count + 1) * 26 + 5), GUILayout.MaxHeight(1 * Screen.height / 4));
-                GUILayout.BeginVertical();
-                for (int i = 0; i < KSC.SPHRates.Count; i++)
-                {
-                    double rate = KCT_Utilities.GetBuildRate(i, KCT_BuildListVessel.ListType.SPH, KSC);
-                    double upgraded = KCT_Utilities.GetBuildRate(i, KCT_BuildListVessel.ListType.SPH, KSC, true);
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label("Rate " + (i + 1));
-                    GUILayout.Label(rate + " BP/s");
-                    if (upgrades - spentPoints > 0 && (i == 0 || upgraded <= KCT_Utilities.GetBuildRate(i - 1, KCT_BuildListVessel.ListType.SPH, KSC)) && upgraded - rate > 0)
-                    {
-                        if (GUILayout.Button("+" + Math.Round(upgraded - rate, 3), GUILayout.Width(55)))
-                        {
-                            if (i < KSC.SPHUpgrades.Count)
-                                ++KSC.SPHUpgrades[i];
-                            else
-                                KSC.SPHUpgrades.Add(1);
-                            KSC.RecalculateBuildRates();
-                            KSC.RecalculateUpgradedBuildRates();
-                        }
-                    }
-                    GUILayout.EndHorizontal();
-                }
-
-                GUILayout.EndVertical();
-                GUILayout.EndScrollView();
+                DrawRateSection(KCT_BuildListVessel.ListType.SPH, KSC, KSC.SPHUpgrades, KSC.SPHRates);
             }
             if (upgradeWindowHolder == 2) //R&D
             {
+                int labelDelta = ((buyModifier < 0) ? availablePoints : buyModifier);
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("R&D Upgrades");
+                GUILayout.Label("+" + labelDelta + " Point" + (labelDelta == 1 ? "" : "s"), GUILayout.ExpandWidth(false));
                 GUILayout.EndHorizontal();
 
-                if (researchRate == -13)
+                if (researchRate == -13 || cacheInvalid)
                 {
-                    Dictionary<string, string> normalVars = new Dictionary<string, string>() { { "N", KSC.RDUpgrades[0].ToString() }, { "R", KCT_Utilities.BuildingUpgradeLevel(SpaceCenterFacility.ResearchAndDevelopment).ToString() } };
-                    KCT_MathParsing.AddCrewVariables(normalVars);
-                    researchRate = KCT_MathParsing.GetStandardFormulaValue("Research", normalVars);
+                    researchDelta = buyModifier < 0 ? availablePoints : buyModifier;
+                    Dictionary<string, string> variables = new Dictionary<string, string>() { { "N", KSC.RDUpgrades[0].ToString() }, { "R", KCT_Utilities.BuildingUpgradeLevel(SpaceCenterFacility.ResearchAndDevelopment).ToString() } };
+                    KCT_MathParsing.AddCrewVariables(variables);
+                    researchRate = KCT_MathParsing.GetStandardFormulaValue("Research", variables);
 
-                    Dictionary<string, string> upVars = new Dictionary<string, string>() { { "N", (KSC.RDUpgrades[0] + 1).ToString() }, { "R", KCT_Utilities.BuildingUpgradeLevel(SpaceCenterFacility.ResearchAndDevelopment).ToString() } };
-                    KCT_MathParsing.AddCrewVariables(upVars);
-                    upResearchRate = KCT_MathParsing.GetStandardFormulaValue("Research", upVars);
+                    variables["N"] = (KSC.RDUpgrades[0] + researchDelta).ToString();
+                    upResearchRate = KCT_MathParsing.GetStandardFormulaValue("Research", variables);
                 }
 
                 if (researchRate >= 0)
@@ -1775,11 +1841,13 @@ namespace KerbalConstructionTime
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Research");
                     GUILayout.Label(Math.Round(researchRate * 86400, 2) + " sci/86400 BP");
-                    if (upgrades - spentPoints > 0)
+                    if (availablePoints > 0)
                     {
-                        if (GUILayout.Button("+" + Math.Round((upResearchRate - researchRate) * 86400, 2), GUILayout.Width(45)))
+                        bool canAfford = (availablePoints >= researchDelta);
+                        var style = canAfford ? GUI.skin.button : GetCannotAffordStyle();
+                        if (GUILayout.Button("+" + Math.Round((upResearchRate - researchRate) * 86400, 2), style, GUILayout.Width(45)) && canAfford)
                         {
-                            ++KSC.RDUpgrades[0];
+                            KSC.RDUpgrades[0] += researchDelta;
                             researchRate = -13;
                         }
                     }
@@ -1787,16 +1855,11 @@ namespace KerbalConstructionTime
                 }
 
                 double days = GameSettings.KERBIN_TIME ? 4 : 1;
-                if (nodeRate == -13)
+                if (nodeRate == -13 || cacheInvalid)
                 {
+                    nodeDelta = buyModifier < 0 ? availablePoints : buyModifier;
                     nodeRate = KCT_MathParsing.ParseNodeRateFormula(0);
-                    //KCT_MathParsing.GetStandardFormulaValue("Node", new Dictionary<string, string>() { { "N", KSC.RDUpgrades[1].ToString() }, { "R", KCT_Utilities.BuildingUpgradeLevel(SpaceCenterFacility.ResearchAndDevelopment).ToString() } });
-                    // double max = double.Parse(KCT_GameStates.formulaSettings.NodeMax);
-                    //  if (max > 0 && nodeRate > max) nodeRate = max;
-
-                    upNodeRate = KCT_MathParsing.ParseNodeRateFormula(0, 0, true);
-                    //KCT_MathParsing.GetStandardFormulaValue("Node", new Dictionary<string, string>() { { "N", (KSC.RDUpgrades[1] + 1).ToString() }, { "R", KCT_Utilities.BuildingUpgradeLevel(SpaceCenterFacility.ResearchAndDevelopment).ToString() } });
-                    //  if (max > 0 && upNodeRate > max) upNodeRate = max;
+                    upNodeRate = KCT_MathParsing.ParseNodeRateFormula(0, 0, nodeDelta);
                 }
                 double sci = 86400 * nodeRate;
 
@@ -1816,7 +1879,7 @@ namespace KerbalConstructionTime
                     GUILayout.Label(Math.Round(sciPerDay * daysPerYear * 1000) / 1000 + " sci/yr");
                     usingPerYear = true;
                 }
-                if (upNodeRate != nodeRate && upgrades - spentPoints > 0)
+                if (upNodeRate != nodeRate && availablePoints > 0)
                 {
                     bool everyKSCCanUpgrade = true;
                     foreach (KCT_KSC ksc in KCT_GameStates.KSCs)
@@ -1836,9 +1899,11 @@ namespace KerbalConstructionTime
                             int daysPerYear = KSPUtil.dateTimeFormatter.Year / KSPUtil.dateTimeFormatter.Day;
                             buttonText = Math.Round(upSciPerDay * daysPerYear * 1000) / 1000 + " sci/yr";
                         }
-                        if (GUILayout.Button(buttonText, GUILayout.ExpandWidth(false)))
+                        bool canAfford = (availablePoints >= nodeDelta);
+                        var style = canAfford ? GUI.skin.button : GetCannotAffordStyle();
+                        if (GUILayout.Button(buttonText, style, GUILayout.ExpandWidth(false)) && canAfford)
                         {
-                            ++KCT_GameStates.TechUpgradesTotal;
+                            KCT_GameStates.TechUpgradesTotal += nodeDelta;
                             foreach (KCT_KSC ksc in KCT_GameStates.KSCs)
                                 ksc.RDUpgrades[1] = KCT_GameStates.TechUpgradesTotal;
 
@@ -1865,8 +1930,7 @@ namespace KerbalConstructionTime
                     //    KCT_Events.instance.KCTButtonStock.SetTrue();
                     if (KCT_GameStates.toolbarControl != null)
                         KCT_GameStates.toolbarControl.SetTrue();
-
-                    else
+                    //else
                         showBuildList = true;
                 }
             }
@@ -1943,8 +2007,8 @@ namespace KerbalConstructionTime
             selectedPadIdx = GUILayout.SelectionGrid(selectedPadIdx, padLvlOptions, 1);
 
             double curPadCost = padCosts[selectedPadIdx];
-            double curPadBuildTime = KCT_UpgradingBuilding.CalculateBuildTime(curPadCost);
-            string sBuildTime = KCT_Utilities.PrintDateDelta(curPadBuildTime, false, false); // Hiding minutes and seconds by default
+            double curPadBuildTime = KCT_UpgradingBuilding.CalculateBuildTime(curPadCost, SpaceCenterFacility.LaunchPad);
+            string sBuildTime = KSPUtil.PrintDateDelta(curPadBuildTime, true);
 
             GUILayout.Label($"It will cost {Math.Round(curPadCost, 2):N} funds to build the new launchpad. " +
                             $"Estimated construction time is {sBuildTime}. Would you like to build it?");
@@ -1988,6 +2052,7 @@ namespace KerbalConstructionTime
                     KCT_GameStates.ActiveKSC.LaunchPads.Add(new KCT_LaunchPad(newName, -1));
                     //create new upgradeable
                     KCT_UpgradingBuilding newPad = new KCT_UpgradingBuilding();
+                    newPad.facilityType = SpaceCenterFacility.LaunchPad;
                     newPad.id = KCT_LaunchPad.LPID;
                     newPad.isLaunchpad = true;
                     newPad.launchpadID = KCT_GameStates.ActiveKSC.LaunchPads.Count - 1;
@@ -2163,7 +2228,7 @@ namespace KerbalConstructionTime
             {
                 try
                 {
-                    airlaunchParams.VesselId = KCT_GameStates.launchedVessel.id;
+                    airlaunchParams.KCTVesselId = KCT_GameStates.launchedVessel.id;
                     airlaunchParams.Altitude = double.Parse(sAltitude);
                     airlaunchParams.Velocity = double.Parse(sVelocity);
                     airlaunchParams.LaunchAzimuth = double.Parse(sAzimuth);

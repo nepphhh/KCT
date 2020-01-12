@@ -4,7 +4,8 @@ namespace KerbalConstructionTime
 {
     public class AirlaunchParams
     {
-        public Guid VesselId { get; set; }
+        public Guid KCTVesselId { get; set; }
+        public Guid? KSPVesselId { get; set; }
         public double Altitude { get; set; }
         public double KscAzimuth { get; set; }
         public double KscDistance { get; set; }

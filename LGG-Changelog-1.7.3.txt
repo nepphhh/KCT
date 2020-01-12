@@ -1,5 +1,12 @@
 ChangeLog
 
+1.4.6.18
+	Fixed issue where switching editor building while editing a new vessel would end up having the new vessel rolled out to the wrong launchsite (fixed in ClickThroughBlocker), listed here for completeness
+	Fixed issue when closing Upgrades was not returning to main KCT dialog
+	Fixed issue where a kerbal on EVA could be recovered to either the SPH or VAB
+	Added 3 more buttons for upgrades to allow easier upgrading of multiple points
+	Added check to disable the "Reset Points" if not enough points available
+
 1.4.6.17
 	Fixed issue where switching editor building while editing a new vessel would end up having the
 	new vessel rolled out to the wrong launchsite 
